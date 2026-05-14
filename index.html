@@ -1,0 +1,2825 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FitSupply — Tu rutina de suplementos en piloto automático</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        bg:    '#0A0B0A',
+        bg2:   '#101210',
+        card:  '#15171544',
+        cardS: '#1A1C1A',
+        line:  '#22251f',
+        muted: '#8A8F85',
+        ink:   '#E8EAE3',
+        lime:  '#C7FF3D',
+        limeD: '#A6E512',
+        ember: '#FF7A45',
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Space Grotesk', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      }
+    }
+  }
+}
+</script>
+<style>
+  html, body { background: #0A0B0A; color: #E8EAE3; font-family: 'Inter', system-ui, sans-serif; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #0A0B0A; }
+  ::-webkit-scrollbar-thumb { background: #22251f; border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: #2f3329; }
+
+  .grain {
+    background-image:
+      radial-gradient(rgba(199,255,61,0.04) 1px, transparent 1px),
+      radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 22px 22px, 7px 7px;
+    background-position: 0 0, 4px 4px;
+  }
+
+  .display { font-family: 'Space Grotesk', system-ui, sans-serif; letter-spacing: -0.02em; }
+  .num { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum' 1; }
+
+  .glow { box-shadow: 0 0 0 1px #22251f, 0 30px 80px -20px rgba(199,255,61,0.18); }
+  .glow-soft { box-shadow: 0 0 0 1px #22251f, 0 20px 50px -25px rgba(0,0,0,0.6); }
+
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+          font-size: 11px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+  .chip-lime { background: rgba(199,255,61,0.08); color: #C7FF3D; border: 1px solid rgba(199,255,61,0.18); }
+  .chip-mut { background: #15171522; color: #8A8F85; border: 1px solid #22251f; }
+  .chip-dot::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; box-shadow: 0 0 8px currentColor; }
+
+  .btn-primary { background: #C7FF3D; color:#0A0B0A; font-weight:700; padding:14px 22px; border-radius: 999px;
+                 display:inline-flex; align-items:center; gap:8px; transition: transform .15s ease, box-shadow .15s ease; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 30px -10px rgba(199,255,61,0.45); }
+  .btn-ghost { color:#E8EAE3; border:1px solid #22251f; background:#101210; padding:13px 21px; border-radius:999px;
+               display:inline-flex; align-items:center; gap:8px; transition: border-color .15s ease, background .15s ease; }
+  .btn-ghost:hover { border-color:#3a3f33; background:#15171522; }
+
+  .navlink { color:#8A8F85; font-weight:500; padding:8px 14px; border-radius:999px; transition: all .15s ease; cursor:pointer; }
+  .navlink:hover { color:#E8EAE3; background:#15171522; }
+  .navlink.active { color:#0A0B0A; background:#C7FF3D; }
+
+  .sidelink { color:#8A8F85; display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; font-size:14px; transition: all .15s ease; cursor:pointer; }
+  .sidelink:hover { color:#E8EAE3; background:#15171522; }
+  .sidelink.active { color:#C7FF3D; background:rgba(199,255,61,0.06); border:1px solid rgba(199,255,61,0.15); }
+  .sidelink.active .ico { color:#C7FF3D; }
+
+  .kbd { font-family: 'JetBrains Mono', monospace; font-size:11px; border:1px solid #22251f; padding:2px 6px; border-radius:6px; background:#101210; color:#8A8F85; }
+
+  .marquee {
+    display:flex; gap:48px; white-space:nowrap; overflow:hidden; mask-image:linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  }
+  .marquee-track { display:flex; gap:48px; animation: scroll 32s linear infinite; }
+  @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  .seg { display:flex; gap:4px; background:#101210; border:1px solid #22251f; padding:4px; border-radius:999px; }
+  .seg button { padding:6px 14px; border-radius:999px; color:#8A8F85; font-size:13px; font-weight:500; }
+  .seg button.on { background:#C7FF3D; color:#0A0B0A; }
+
+  .table th { font-size:11px; font-weight:600; color:#8A8F85; text-transform:uppercase; letter-spacing:0.08em; padding:14px 16px; text-align:left; border-bottom:1px solid #22251f; }
+  .table td { padding:16px; border-bottom:1px solid #15171522; font-size:14px; color:#E8EAE3; }
+  .table tr:hover td { background:#101210; }
+
+  input[type=range] { -webkit-appearance:none; height:4px; background:#22251f; border-radius:999px; outline:none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:#C7FF3D; cursor:pointer; box-shadow:0 0 0 4px rgba(199,255,61,0.15); }
+
+  details > summary { list-style:none; cursor:pointer; }
+  details > summary::-webkit-details-marker { display:none; }
+  details[open] .chev { transform: rotate(180deg); }
+  .chev { transition: transform .2s ease; }
+
+  .ring-lime { box-shadow: inset 0 0 0 1px rgba(199,255,61,0.35); }
+
+  .grad-text { background: linear-gradient(180deg, #E8EAE3, #888a82); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  @keyframes pulseLime { 0%,100% { opacity:1 } 50% { opacity:.5 } }
+  .pulse-dot { animation: pulseLime 2s ease-in-out infinite; }
+
+  .page { display:none; }
+  .page.active { display:block; }
+
+  .product-card { background:#101210; border:1px solid #22251f; border-radius:18px; overflow:hidden; transition: border-color .2s ease, transform .2s ease; }
+  .product-card:hover { border-color:rgba(199,255,61,0.35); transform: translateY(-2px); }
+  .product-thumb { aspect-ratio: 1/1; background: linear-gradient(135deg, #15171522 0%, #0A0B0A 100%); display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; }
+
+  .bento { display:grid; gap:14px; grid-template-columns: repeat(12, minmax(0,1fr)); grid-auto-rows: minmax(120px, auto); }
+  .bento > * { background:#101210; border:1px solid #22251f; border-radius:18px; padding:20px; }
+
+  /* Calendar shipment cell */
+  .cal-cell { aspect-ratio: 1/1; border-radius:10px; background:#101210; border:1px solid #22251f; padding:6px; font-size:11px; position:relative; }
+  .cal-cell.has { background: linear-gradient(180deg, rgba(199,255,61,0.06), #101210); border-color: rgba(199,255,61,0.3); }
+  .cal-cell.today { border-color:#C7FF3D; }
+  .cal-pill { font-size:10px; padding:1px 5px; border-radius:5px; background:#22251f; color:#E8EAE3; display:inline-block; margin-top:4px; }
+
+  /* product blob backgrounds */
+  .blob-creatina { background: radial-gradient(circle at 30% 30%, #1d2a16, #0A0B0A 70%); }
+  .blob-whey    { background: radial-gradient(circle at 30% 30%, #2a1d16, #0A0B0A 70%); }
+  .blob-omega   { background: radial-gradient(circle at 30% 30%, #16252a, #0A0B0A 70%); }
+  .blob-pre     { background: radial-gradient(circle at 30% 30%, #2a162a, #0A0B0A 70%); }
+  .blob-vit     { background: radial-gradient(circle at 30% 30%, #2a2516, #0A0B0A 70%); }
+  .blob-mag     { background: radial-gradient(circle at 30% 30%, #162a25, #0A0B0A 70%); }
+  .blob-ash     { background: radial-gradient(circle at 30% 30%, #2a2016, #0A0B0A 70%); }
+  .blob-coll    { background: radial-gradient(circle at 30% 30%, #251628, #0A0B0A 70%); }
+
+  /* svg bottle */
+  .bottle { width:54%; height:64%; }
+  .bottle .cap { fill: #2a2d24; }
+  .bottle .body { fill: #1a1c19; stroke: rgba(255,255,255,0.06); stroke-width:1; }
+  .bottle .label { fill: #C7FF3D; }
+  .bottle .label-text { fill: #0A0B0A; font-family: 'Space Grotesk'; font-weight:700; font-size:9px; }
+
+  /* divider */
+  .hr { height:1px; background: linear-gradient(to right, transparent, #22251f, transparent); }
+
+  .sparkline path { stroke: #C7FF3D; stroke-width: 1.5; fill: none; }
+  .sparkline circle { fill: #C7FF3D; }
+
+  /* Toast */
+  #toast { position:fixed; bottom:24px; left:50%; transform: translateX(-50%) translateY(20px); opacity:0; pointer-events:none; transition: all .25s ease; }
+  #toast.show { transform: translateX(-50%) translateY(0); opacity:1; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- ===================== TOP BAR ===================== -->
+<header class="sticky top-0 z-50 backdrop-blur-xl bg-bg/75 border-b border-line/60">
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
+    <a class="flex items-center gap-2 cursor-pointer" onclick="nav('landing')">
+      <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+        <rect x="2" y="2" width="28" height="28" rx="9" fill="#C7FF3D"/>
+        <path d="M10 22 V10 H22 M10 16 H19" stroke="#0A0B0A" stroke-width="3" stroke-linecap="square"/>
+      </svg>
+      <span class="display font-bold text-[22px] tracking-tight">fitsupply<span class="text-lime">.</span></span>
+    </a>
+    <nav class="hidden md:flex items-center gap-1">
+      <a class="navlink" data-nav="demo" onclick="nav('demo')">Demo</a>
+      <a class="navlink" data-nav="landing" onclick="nav('landing')">Inicio</a>
+      <a class="navlink" data-nav="shop" onclick="nav('shop')">Catálogo</a>
+      <a class="navlink" data-nav="builder" onclick="nav('builder')">Armá tu plan</a>
+      <a class="navlink" data-nav="account" onclick="nav('account')">Mi cuenta</a>
+      <a class="navlink" data-nav="admin" onclick="nav('admin')">Admin</a>
+      <a class="navlink" data-nav="market" onclick="nav('market')">Mercado</a>
+      <a class="navlink" data-nav="integrations" onclick="nav('integrations')">Integraciones</a>
+    </nav>
+    <div class="flex items-center gap-2">
+      <button class="hidden md:inline-flex items-center gap-2 text-muted text-sm px-3 py-2 border border-line rounded-full">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        Buscar <span class="kbd">⌘K</span>
+      </button>
+      <button class="btn-primary text-[13px] py-2.5 px-4" onclick="nav('builder')">
+        Armar plan
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ===================== DEMO MENU (entry point) ===================== -->
+<section class="page active" id="page-demo">
+  <div class="relative overflow-hidden">
+    <div class="absolute inset-0 grain opacity-50 pointer-events-none"></div>
+    <div class="absolute -top-20 -right-20 w-[420px] h-[420px] rounded-full bg-lime/10 blur-[120px] pointer-events-none"></div>
+
+    <div class="max-w-[1480px] mx-auto px-6 lg:px-10 pt-12 lg:pt-16 pb-10">
+      <div class="flex items-center gap-2 mb-6">
+        <span class="chip chip-lime chip-dot">demo · maqueta navegable</span>
+        <span class="chip chip-mut">v1.0 · 14 may 2026</span>
+      </div>
+
+      <div class="grid lg:grid-cols-12 gap-10 items-end">
+        <div class="lg:col-span-8">
+          <h1 class="display font-bold text-[56px] sm:text-[80px] lg:text-[112px] leading-[0.88] tracking-tight">
+            <span class="grad-text">FitSupply</span><br/>
+            <span class="text-lime">demo navegable.</span>
+          </h1>
+          <p class="text-muted text-lg lg:text-xl max-w-2xl mt-7 leading-relaxed">
+            Una sola maqueta con 7 vistas conectadas: web pública, e-commerce, motor de armado de plan, panel del cliente, panel de operaciones, market research con datos reales y mapa de integraciones para Argentina.
+          </p>
+          <div class="flex flex-wrap items-center gap-3 mt-8">
+            <button class="btn-primary" onclick="nav('landing')">
+              Entrar como visitante
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </button>
+            <button class="btn-ghost" onclick="nav('admin')">Entrar como admin</button>
+          </div>
+        </div>
+
+        <div class="lg:col-span-4">
+          <div class="bg-bg2 border border-line rounded-3xl p-5 glow-soft">
+            <div class="text-xs text-muted uppercase tracking-wider mb-4">Estado del proyecto</div>
+            <div class="space-y-3 text-sm">
+              <div class="flex items-center justify-between"><span>Diseño y mockup</span><span class="chip chip-lime text-[10px]">listo</span></div>
+              <div class="flex items-center justify-between"><span>Market research</span><span class="chip chip-lime text-[10px]">listo</span></div>
+              <div class="flex items-center justify-between"><span>Stack de integraciones</span><span class="chip chip-lime text-[10px]">definido</span></div>
+              <div class="flex items-center justify-between"><span>Repo GitHub + deploy Vercel</span><span class="chip chip-lime text-[10px]">live</span></div>
+              <div class="flex items-center justify-between"><span>MVP en producción</span><span class="chip chip-mut text-[10px]">próximo</span></div>
+            </div>
+            <div class="hr my-5"></div>
+            <div class="grid grid-cols-3 gap-2 text-center text-xs">
+              <div><div class="display text-xl font-bold num">7</div><div class="text-muted">vistas</div></div>
+              <div><div class="display text-xl font-bold num">18</div><div class="text-muted">SKUs</div></div>
+              <div><div class="display text-xl font-bold num">120</div><div class="text-muted">users mock</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-10">
+    <div class="flex items-center gap-2 mb-5">
+      <h2 class="display text-2xl font-semibold">Las 7 vistas del producto</h2>
+      <span class="chip chip-mut">click para entrar</span>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+
+      <a class="bg-bg2 border border-line rounded-3xl p-6 hover:border-lime/40 transition cursor-pointer block" onclick="nav('landing')">
+        <div class="flex items-center justify-between mb-5">
+          <div class="w-11 h-11 rounded-xl bg-lime/10 ring-lime flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <span class="num text-muted text-xs">01</span>
+        </div>
+        <div class="text-xs text-muted uppercase tracking-wider mb-1">Pública</div>
+        <h3 class="display text-xl font-semibold mb-2">Landing</h3>
+        <p class="text-muted text-sm leading-relaxed">Hero editorial, propuesta de valor, cómo funciona, testimonios, planes, FAQ y CTA grande.</p>
+        <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+      </a>
+
+      <a class="bg-bg2 border border-line rounded-3xl p-6 hover:border-lime/40 transition cursor-pointer block" onclick="nav('shop')">
+        <div class="flex items-center justify-between mb-5">
+          <div class="w-11 h-11 rounded-xl bg-lime/10 ring-lime flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+          </div>
+          <span class="num text-muted text-xs">02</span>
+        </div>
+        <div class="text-xs text-muted uppercase tracking-wider mb-1">E-commerce</div>
+        <h3 class="display text-xl font-semibold mb-2">Catálogo</h3>
+        <p class="text-muted text-sm leading-relaxed">18 SKUs reales con marcas argentinas (ENA, Star, Mervick, Gentech) y precios CABA 2026.</p>
+        <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+      </a>
+
+      <a class="bg-bg2 border border-line rounded-3xl p-6 hover:border-lime/40 transition cursor-pointer block" onclick="nav('builder')">
+        <div class="flex items-center justify-between mb-5">
+          <div class="w-11 h-11 rounded-xl bg-lime/10 ring-lime flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </div>
+          <span class="num text-muted text-xs">03</span>
+        </div>
+        <div class="text-xs text-muted uppercase tracking-wider mb-1">Núcleo del producto</div>
+        <h3 class="display text-xl font-semibold mb-2">Armá tu plan</h3>
+        <p class="text-muted text-sm leading-relaxed">Slider de dosis diaria, selector de marca y cálculo de días-de-suministro en tiempo real.</p>
+        <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+      </a>
+
+      <a class="bg-bg2 border border-line rounded-3xl p-6 hover:border-lime/40 transition cursor-pointer block" onclick="nav('account')">
+        <div class="flex items-center justify-between mb-5">
+          <div class="w-11 h-11 rounded-xl bg-lime/10 ring-lime flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <span class="num text-muted text-xs">04</span>
+        </div>
+        <div class="text-xs text-muted uppercase tracking-wider mb-1">Cliente</div>
+        <h3 class="display text-xl font-semibold mb-2">Mi cuenta</h3>
+        <p class="text-muted text-sm leading-relaxed">Stock restante, próximos envíos, calendario de dosis del mes e historial.</p>
+        <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+      </a>
+
+      <a class="bg-bg2 border border-line rounded-3xl p-6 hover:border-lime/40 transition cursor-pointer block" onclick="nav('admin')">
+        <div class="flex items-center justify-between mb-5">
+          <div class="w-11 h-11 rounded-xl bg-lime/10 ring-lime flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <span class="num text-muted text-xs">05</span>
+        </div>
+        <div class="text-xs text-muted uppercase tracking-wider mb-1">Operaciones</div>
+        <h3 class="display text-xl font-semibold mb-2">Admin · 7 paneles</h3>
+        <p class="text-muted text-sm leading-relaxed">Overview MRR, suscriptores, logística con calendario, inventario, productos, ingresos, retención.</p>
+        <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+      </a>
+
+      <a class="bg-bg2 border border-line rounded-3xl p-6 hover:border-lime/40 transition cursor-pointer block" onclick="nav('market')">
+        <div class="flex items-center justify-between mb-5">
+          <div class="w-11 h-11 rounded-xl bg-lime/10 ring-lime flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <span class="num text-muted text-xs">06</span>
+        </div>
+        <div class="text-xs text-muted uppercase tracking-wider mb-1">Negocio</div>
+        <h3 class="display text-xl font-semibold mb-2">Market Research</h3>
+        <p class="text-muted text-sm leading-relaxed">Tamaño AR USD 25.8M, 3.6M gym-goers, competencia, churn benchmarks, riesgo ANMAT.</p>
+        <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+      </a>
+
+      <a class="bg-bg2 border border-line rounded-3xl p-6 hover:border-lime/40 transition cursor-pointer block" onclick="nav('integrations')">
+        <div class="flex items-center justify-between mb-5">
+          <div class="w-11 h-11 rounded-xl bg-lime/10 ring-lime flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <span class="num text-muted text-xs">07</span>
+        </div>
+        <div class="text-xs text-muted uppercase tracking-wider mb-1">Arquitectura</div>
+        <h3 class="display text-xl font-semibold mb-2">Integraciones</h3>
+        <p class="text-muted text-sm leading-relaxed">MercadoPago, Andreani, WhatsApp Wati, Postmark. Costos a 1.000 suscriptores.</p>
+        <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+      </a>
+
+      <div class="bg-bg2 border border-dashed border-line rounded-3xl p-6 flex flex-col items-center justify-center text-center">
+        <div class="text-xs text-muted uppercase tracking-wider mb-2">próximos</div>
+        <h3 class="display text-base font-semibold text-muted mb-1">App móvil · WhatsApp bot</h3>
+        <p class="text-muted text-xs leading-relaxed">Recordatorio de dosis, pausa por voz, tracking de envío en tiempo real.</p>
+      </div>
+
+    </div>
+
+    <div class="mt-10 grid lg:grid-cols-3 gap-3">
+      <div class="bg-bg2 border border-line rounded-2xl p-5">
+        <div class="text-[10px] text-muted uppercase tracking-wider mb-2">Origen de la idea</div>
+        <p class="text-sm leading-relaxed">"Vos siempre comprás creatina, tenés que estar buscándola… imagínate si tuvieras una app donde seleccionás los suplementos y la dosis, y cada 28 días te llega solo."</p>
+        <div class="text-muted text-xs mt-3 num">— audio del founder, 13 may 2026</div>
+      </div>
+      <div class="bg-bg2 border border-line rounded-2xl p-5">
+        <div class="text-[10px] text-muted uppercase tracking-wider mb-2">Tesis del producto</div>
+        <p class="text-sm leading-relaxed">El mayor obstáculo de tomar suplementos en serio no es el dinero ni la disciplina: es la <span class="text-lime font-semibold">logística repetitiva de comprar</span>. Eliminarla cambia el comportamiento.</p>
+      </div>
+      <div class="bg-bg2 border border-line rounded-2xl p-5">
+        <div class="text-[10px] text-muted uppercase tracking-wider mb-2">Stack actual</div>
+        <p class="text-sm leading-relaxed">HTML + Tailwind + Chart.js como mockup. Next.js + Neon Postgres + MercadoPago Preapproval + Andreani API en producción (ver Integraciones).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== LANDING ===================== -->
+<section class="page" id="page-landing">
+
+  <!-- Hero -->
+  <div class="relative overflow-hidden">
+    <div class="absolute inset-0 grain opacity-50 pointer-events-none"></div>
+    <div class="absolute -top-20 -right-20 w-[420px] h-[420px] rounded-full bg-lime/10 blur-[120px] pointer-events-none"></div>
+
+    <div class="max-w-[1480px] mx-auto px-6 lg:px-10 pt-12 lg:pt-20 pb-14">
+      <div class="flex items-center gap-2 mb-6">
+        <span class="chip chip-lime chip-dot">en vivo en Buenos Aires</span>
+        <span class="chip chip-mut">v0.4 · beta privada</span>
+      </div>
+
+      <div class="grid lg:grid-cols-12 gap-10 lg:gap-16 items-end">
+        <div class="lg:col-span-8">
+          <h1 class="display font-bold text-[64px] sm:text-[88px] lg:text-[128px] leading-[0.88] tracking-tight">
+            <span class="grad-text">Tu rutina de</span><br/>
+            <span>suplementos,</span><br/>
+            <span class="text-lime">en piloto automático.</span>
+          </h1>
+          <p class="text-muted text-lg lg:text-xl max-w-xl mt-8 leading-relaxed">
+            Elegís qué tomar y la dosis diaria. Calculamos exactamente cuánto necesitás cada mes y te llega antes de que se acabe. Sin renegar con la logística. Sin pensar.
+          </p>
+
+          <div class="flex flex-wrap items-center gap-3 mt-10">
+            <button class="btn-primary" onclick="nav('builder')">
+              Armá tu plan en 90 segundos
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </button>
+            <button class="btn-ghost" onclick="nav('shop')">
+              Ver catálogo
+            </button>
+            <div class="flex items-center gap-3 ml-2">
+              <div class="flex -space-x-2">
+                <div class="w-8 h-8 rounded-full border-2 border-bg bg-gradient-to-br from-lime to-ember"></div>
+                <div class="w-8 h-8 rounded-full border-2 border-bg bg-gradient-to-br from-ember to-lime"></div>
+                <div class="w-8 h-8 rounded-full border-2 border-bg bg-gradient-to-br from-[#9EC0FF] to-lime"></div>
+              </div>
+              <div class="text-sm leading-tight">
+                <div class="font-semibold">2.831 atletas</div>
+                <div class="text-muted text-xs">recibiendo este mes</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero side: live plan card -->
+        <div class="lg:col-span-4">
+          <div class="bg-bg2 border border-line rounded-3xl p-5 glow">
+            <div class="flex items-center justify-between mb-4">
+              <span class="chip chip-lime chip-dot pulse-dot">plan activo</span>
+              <span class="text-muted text-xs num">PLN-08123</span>
+            </div>
+            <div class="space-y-3">
+              <!-- plan rows -->
+              <div class="flex items-center gap-3 p-3 rounded-2xl bg-bg border border-line">
+                <div class="w-12 h-12 rounded-xl blob-creatina flex items-center justify-center">
+                  <svg viewBox="0 0 40 60" class="bottle"><rect class="cap" x="13" y="2" width="14" height="6" rx="2"/><rect class="body" x="8" y="8" width="24" height="48" rx="4"/><rect class="label" x="9" y="22" width="22" height="20"/><text class="label-text" x="20" y="35" text-anchor="middle">CR</text></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold truncate">Creatina Monohidrato · ENA</div>
+                  <div class="text-muted text-xs">5g/día · 300g · llega cada 60 días</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs text-muted">próximo</div>
+                  <div class="text-sm font-semibold num text-lime">22 may</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 p-3 rounded-2xl bg-bg border border-line">
+                <div class="w-12 h-12 rounded-xl blob-whey flex items-center justify-center">
+                  <svg viewBox="0 0 40 60" class="bottle"><rect class="cap" x="13" y="2" width="14" height="6" rx="2"/><rect class="body" x="8" y="8" width="24" height="48" rx="4"/><rect class="label" x="9" y="22" width="22" height="20" fill="#FF7A45"/><text class="label-text" x="20" y="35" text-anchor="middle" fill="#0A0B0A">WH</text></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold truncate">Whey Protein · Star Nutrition</div>
+                  <div class="text-muted text-xs">30g/día · 1kg · llega cada 33 días</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs text-muted">próximo</div>
+                  <div class="text-sm font-semibold num text-lime">28 may</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 p-3 rounded-2xl bg-bg border border-line">
+                <div class="w-12 h-12 rounded-xl blob-omega flex items-center justify-center">
+                  <svg viewBox="0 0 40 60" class="bottle"><rect class="cap" x="13" y="2" width="14" height="6" rx="2"/><rect class="body" x="8" y="8" width="24" height="48" rx="4"/><rect class="label" x="9" y="22" width="22" height="20" fill="#9EC0FF"/><text class="label-text" x="20" y="35" text-anchor="middle">O3</text></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold truncate">Omega-3 · Mervick</div>
+                  <div class="text-muted text-xs">2 caps/día · 90 caps · cada 45 días</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-xs text-muted">próximo</div>
+                  <div class="text-sm font-semibold num text-lime">07 jun</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="hr my-5"></div>
+            <div class="flex items-end justify-between">
+              <div>
+                <div class="text-muted text-xs uppercase tracking-wider">Costo mensual</div>
+                <div class="display text-3xl font-bold num">$ 47.890<span class="text-muted text-sm font-normal ml-1">/mes</span></div>
+              </div>
+              <button class="btn-primary text-[12px] py-2 px-3" onclick="nav('account')">Ver detalle →</button>
+            </div>
+          </div>
+
+          <!-- supply gauge -->
+          <div class="mt-3 grid grid-cols-3 gap-2">
+            <div class="bg-bg2 border border-line rounded-2xl p-3">
+              <div class="text-[10px] text-muted uppercase tracking-wider">Stock creatina</div>
+              <div class="num font-semibold text-lime">9 días</div>
+              <div class="h-1 bg-line rounded-full mt-1.5 overflow-hidden"><div class="h-full bg-lime" style="width:30%"></div></div>
+            </div>
+            <div class="bg-bg2 border border-line rounded-2xl p-3">
+              <div class="text-[10px] text-muted uppercase tracking-wider">Stock whey</div>
+              <div class="num font-semibold">15 días</div>
+              <div class="h-1 bg-line rounded-full mt-1.5 overflow-hidden"><div class="h-full bg-[#8A8F85]" style="width:50%"></div></div>
+            </div>
+            <div class="bg-bg2 border border-line rounded-2xl p-3">
+              <div class="text-[10px] text-muted uppercase tracking-wider">Stock omega</div>
+              <div class="num font-semibold">25 días</div>
+              <div class="h-1 bg-line rounded-full mt-1.5 overflow-hidden"><div class="h-full bg-[#8A8F85]" style="width:75%"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- marquee de marcas -->
+    <div class="border-y border-line py-5 mt-6">
+      <div class="marquee">
+        <div class="marquee-track">
+          <span class="display text-[28px] text-muted">ENA SPORT</span><span class="display text-[28px] text-line">●</span>
+          <span class="display text-[28px] text-muted">STAR NUTRITION</span><span class="display text-[28px] text-line">●</span>
+          <span class="display text-[28px] text-muted">MERVICK</span><span class="display text-[28px] text-line">●</span>
+          <span class="display text-[28px] text-muted">UNIVERSAL</span><span class="display text-[28px] text-line">●</span>
+          <span class="display text-[28px] text-muted">OPTIMUM NUTRITION</span><span class="display text-[28px] text-line">●</span>
+          <span class="display text-[28px] text-muted">BIRDMAN</span><span class="display text-[28px] text-line">●</span>
+          <span class="display text-[28px] text-muted">GENTECH</span><span class="display text-[28px] text-line">●</span>
+          <span class="display text-[28px] text-muted">ENA SPORT</span><span class="display text-[28px] text-line">●</span>
+          <span class="display text-[28px] text-muted">STAR NUTRITION</span><span class="display text-[28px] text-line">●</span>
+          <span class="display text-[28px] text-muted">MERVICK</span><span class="display text-[28px] text-line">●</span>
+          <span class="display text-[28px] text-muted">UNIVERSAL</span><span class="display text-[28px] text-line">●</span>
+          <span class="display text-[28px] text-muted">OPTIMUM NUTRITION</span><span class="display text-[28px] text-line">●</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- value props -->
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-20">
+    <div class="flex items-end justify-between mb-10">
+      <h2 class="display font-bold text-4xl lg:text-5xl tracking-tight max-w-xl">Tres cosas que nadie más hace.</h2>
+      <p class="text-muted max-w-sm hidden md:block">No vendemos suplementos. Vendemos que no tengas que volver a pensar en comprarlos.</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="bg-bg2 border border-line rounded-3xl p-7">
+        <div class="w-11 h-11 rounded-2xl bg-lime/10 ring-lime flex items-center justify-center mb-5">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>
+        </div>
+        <h3 class="display text-xl font-semibold mb-2">Cálculo de dosis exacto</h3>
+        <p class="text-muted text-sm leading-relaxed">5g de creatina por día en pote de 300g = 60 días. Hacemos esa cuenta para los 12 suplementos que tomes y los agrupamos por envío.</p>
+        <div class="mt-5 num text-xs text-muted">300 g ÷ 5 g/día = <span class="text-lime">60 días</span></div>
+      </div>
+
+      <div class="bg-bg2 border border-line rounded-3xl p-7">
+        <div class="w-11 h-11 rounded-2xl bg-lime/10 ring-lime flex items-center justify-center mb-5">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </div>
+        <h3 class="display text-xl font-semibold mb-2">Llega antes de que falte</h3>
+        <p class="text-muted text-sm leading-relaxed">El sistema dispara el envío 4 días antes del 0. Nunca te quedás sin nada. Nunca te sobran 6 potes en el placard.</p>
+        <div class="mt-5 flex items-center gap-2 text-xs text-muted">
+          <span class="w-2 h-2 rounded-full bg-lime"></span> auto-renueva · <span class="w-2 h-2 rounded-full bg-ember"></span> próximo a vencer
+        </div>
+      </div>
+
+      <div class="bg-bg2 border border-line rounded-3xl p-7">
+        <div class="w-11 h-11 rounded-2xl bg-lime/10 ring-lime flex items-center justify-center mb-5">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="m3 10 9 6 9-6"/></svg>
+        </div>
+        <h3 class="display text-xl font-semibold mb-2">Un envío, todo junto</h3>
+        <p class="text-muted text-sm leading-relaxed">Si vencen en la misma semana, viajan juntos. Optimizamos el envío para reducir costos y plástico.</p>
+        <div class="mt-5 flex items-center gap-3 text-xs">
+          <div class="flex-1 h-1 bg-line rounded-full overflow-hidden"><div class="h-full bg-lime" style="width:75%"></div></div>
+          <span class="text-muted num">75% combinados</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- how it works -->
+  <div class="bg-bg2 border-y border-line">
+    <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-20">
+      <div class="flex items-center gap-3 mb-3">
+        <span class="chip chip-lime">cómo funciona</span>
+      </div>
+      <h2 class="display font-bold text-4xl lg:text-6xl tracking-tight mb-3 max-w-3xl">De renegar con la logística a olvidarte para siempre.</h2>
+      <p class="text-muted max-w-2xl mb-12">Tres pasos. Cuatro minutos. Después solamente abrís la puerta cuando llega.</p>
+
+      <div class="grid lg:grid-cols-3 gap-3">
+        <div class="bg-bg border border-line rounded-3xl p-7 relative overflow-hidden">
+          <div class="num text-[140px] absolute -top-6 -right-2 text-line/40 font-bold leading-none">01</div>
+          <div class="chip chip-mut">paso uno</div>
+          <h3 class="display text-2xl font-semibold mt-4 mb-2">Elegís suplementos</h3>
+          <p class="text-muted text-sm leading-relaxed">Creatina, whey, omega, lo que sea. Marcamos las marcas que confiamos.</p>
+          <div class="mt-6 space-y-2">
+            <div class="flex items-center gap-2 text-xs"><span class="w-4 h-4 rounded bg-lime flex items-center justify-center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0A0B0A" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span> Creatina ENA · 300g</div>
+            <div class="flex items-center gap-2 text-xs"><span class="w-4 h-4 rounded bg-lime flex items-center justify-center"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0A0B0A" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span> Whey Star · 1kg</div>
+            <div class="flex items-center gap-2 text-xs text-muted"><span class="w-4 h-4 rounded border border-line"></span> Pre-workout</div>
+          </div>
+        </div>
+
+        <div class="bg-bg border border-line rounded-3xl p-7 relative overflow-hidden">
+          <div class="num text-[140px] absolute -top-6 -right-2 text-line/40 font-bold leading-none">02</div>
+          <div class="chip chip-mut">paso dos</div>
+          <h3 class="display text-2xl font-semibold mt-4 mb-2">Configurás la dosis</h3>
+          <p class="text-muted text-sm leading-relaxed">Cuánto, todos los días o sólo entre semana. El sistema calcula días-de-suministro.</p>
+          <div class="mt-6 space-y-3">
+            <div>
+              <div class="flex justify-between text-xs mb-1"><span class="text-muted">Creatina</span><span class="num text-lime">5g / día</span></div>
+              <div class="h-1.5 bg-line rounded-full"><div class="h-full bg-lime rounded-full" style="width:50%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-xs mb-1"><span class="text-muted">Whey</span><span class="num text-lime">30g / día</span></div>
+              <div class="h-1.5 bg-line rounded-full"><div class="h-full bg-lime rounded-full" style="width:80%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-bg border border-line rounded-3xl p-7 relative overflow-hidden">
+          <div class="num text-[140px] absolute -top-6 -right-2 text-line/40 font-bold leading-none">03</div>
+          <div class="chip chip-lime">paso tres</div>
+          <h3 class="display text-2xl font-semibold mt-4 mb-2">Te llega · te llega · te llega</h3>
+          <p class="text-muted text-sm leading-relaxed">Recibís los envíos optimizados, todos los meses, antes del 0. Pausá, cambiá o cancelá cuando quieras.</p>
+          <div class="mt-6 grid grid-cols-7 gap-1">
+            <div class="text-[10px] text-muted text-center">L</div><div class="text-[10px] text-muted text-center">M</div><div class="text-[10px] text-muted text-center">M</div><div class="text-[10px] text-muted text-center">J</div><div class="text-[10px] text-muted text-center">V</div><div class="text-[10px] text-muted text-center">S</div><div class="text-[10px] text-muted text-center">D</div>
+            <div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-lime flex items-center justify-center"><span class="text-[9px] text-bg font-bold">●</span></div><div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-line"></div>
+            <div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-lime/40"></div><div class="h-6 rounded bg-line"></div>
+            <div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-lime flex items-center justify-center"><span class="text-[9px] text-bg font-bold">●</span></div><div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-line"></div><div class="h-6 rounded bg-line"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- math feature -->
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-20">
+    <div class="grid lg:grid-cols-12 gap-10 items-center">
+      <div class="lg:col-span-5">
+        <span class="chip chip-mut mb-4 inline-flex">la cuenta</span>
+        <h2 class="display text-4xl lg:text-6xl font-bold tracking-tight leading-[0.95] mb-6">
+          La <span class="text-lime">matemática</span><br/>está de tu lado.
+        </h2>
+        <p class="text-muted text-lg leading-relaxed mb-8">
+          Cada suscripción es un cálculo: dosis × días = consumo. Detrás hay un motor de logística que mira tus 8 suplementos en simultáneo y los hace coincidir en un único envío mensual.
+        </p>
+        <div class="space-y-3">
+          <div class="flex items-center gap-3 text-sm"><span class="w-1 h-6 bg-lime rounded-full"></span> Hasta <span class="num text-lime">38%</span> de ahorro vs comprarlos sueltos</div>
+          <div class="flex items-center gap-3 text-sm"><span class="w-1 h-6 bg-lime rounded-full"></span> Envío gratis a partir de <span class="num text-lime">$30k</span></div>
+          <div class="flex items-center gap-3 text-sm"><span class="w-1 h-6 bg-lime rounded-full"></span> Pausá un mes y todo se reajusta solo</div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-7">
+        <div class="bg-bg2 border border-line rounded-3xl p-7 lg:p-10 glow-soft">
+          <div class="flex items-center justify-between mb-6">
+            <div class="text-xs text-muted uppercase tracking-wider">Ejemplo · plan estándar</div>
+            <span class="chip chip-lime chip-dot pulse-dot">en vivo</span>
+          </div>
+
+          <div class="space-y-4">
+            <div class="grid grid-cols-12 gap-4 items-center">
+              <div class="col-span-4 text-sm">Creatina <span class="text-muted">5g/día</span></div>
+              <div class="col-span-6 h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-lime" style="width:50%"></div></div>
+              <div class="col-span-2 text-right text-sm num text-muted">60 días</div>
+            </div>
+            <div class="grid grid-cols-12 gap-4 items-center">
+              <div class="col-span-4 text-sm">Whey <span class="text-muted">30g/día</span></div>
+              <div class="col-span-6 h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-ember" style="width:30%"></div></div>
+              <div class="col-span-2 text-right text-sm num text-muted">33 días</div>
+            </div>
+            <div class="grid grid-cols-12 gap-4 items-center">
+              <div class="col-span-4 text-sm">Omega-3 <span class="text-muted">2 caps/día</span></div>
+              <div class="col-span-6 h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-[#9EC0FF]" style="width:40%"></div></div>
+              <div class="col-span-2 text-right text-sm num text-muted">45 días</div>
+            </div>
+            <div class="grid grid-cols-12 gap-4 items-center">
+              <div class="col-span-4 text-sm">Multivit <span class="text-muted">1 cap/día</span></div>
+              <div class="col-span-6 h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-[#C8A2FF]" style="width:60%"></div></div>
+              <div class="col-span-2 text-right text-sm num text-muted">90 días</div>
+            </div>
+          </div>
+
+          <div class="hr my-7"></div>
+
+          <div class="grid grid-cols-3 gap-4">
+            <div>
+              <div class="text-xs text-muted uppercase tracking-wider mb-1">Próximo envío</div>
+              <div class="display text-2xl font-bold">28 may</div>
+              <div class="text-xs text-muted num">en 15 días</div>
+            </div>
+            <div>
+              <div class="text-xs text-muted uppercase tracking-wider mb-1">SKUs en envío</div>
+              <div class="display text-2xl font-bold num">3</div>
+              <div class="text-xs text-muted">whey + omega + multivit</div>
+            </div>
+            <div>
+              <div class="text-xs text-muted uppercase tracking-wider mb-1">Total mensual</div>
+              <div class="display text-2xl font-bold num text-lime">$ 47.890</div>
+              <div class="text-xs text-muted">incluye envío</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- testimonial / quote -->
+  <div class="border-y border-line bg-bg2">
+    <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-20">
+      <div class="grid lg:grid-cols-12 gap-10">
+        <div class="lg:col-span-7">
+          <svg width="40" height="32" viewBox="0 0 40 32" fill="#C7FF3D"><path d="M0 32V18C0 8 5 1.3 15 0v6c-5 1-7.5 4.7-7.5 11H15v15H0Zm25 0V18c0-10 5-16.7 15-18v6c-5 1-7.5 4.7-7.5 11H40v15H25Z"/></svg>
+          <p class="display text-3xl lg:text-5xl font-medium leading-[1.1] mt-6 max-w-3xl">
+            "Hace 3 meses que no piso una tienda de suplementos. Mi creatina llega el mismo día que se me acaba. Es <span class="text-lime">brujería</span>."
+          </p>
+          <div class="flex items-center gap-3 mt-8">
+            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-lime to-ember"></div>
+            <div>
+              <div class="font-semibold">Tomás Benitez</div>
+              <div class="text-muted text-sm">Powerlifting · cliente desde feb 2026</div>
+            </div>
+          </div>
+        </div>
+        <div class="lg:col-span-5 space-y-3">
+          <div class="bg-bg border border-line rounded-2xl p-5">
+            <div class="text-sm">"Pausé un mes que me fui a Brasil y volvió a arrancar solo. Una locura."</div>
+            <div class="text-muted text-xs mt-2">— Florencia G. · CrossFit</div>
+          </div>
+          <div class="bg-bg border border-line rounded-2xl p-5">
+            <div class="text-sm">"Ahorro como $20k por mes vs ir a la tienda física. Y no manejo más."</div>
+            <div class="text-muted text-xs mt-2">— Nahuel R. · Bodybuilding</div>
+          </div>
+          <div class="bg-bg border border-line rounded-2xl p-5">
+            <div class="text-sm">"El panel te dice cuántos días te quedan de cada cosa. Mejor que mi propio calendario."</div>
+            <div class="text-muted text-xs mt-2">— Sofía M. · Running</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- pricing / plans CTA -->
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-20">
+    <div class="flex flex-col lg:flex-row gap-3 lg:items-end justify-between mb-10">
+      <div>
+        <span class="chip chip-mut mb-3 inline-flex">precios</span>
+        <h2 class="display text-4xl lg:text-6xl font-bold tracking-tight leading-[0.95]">Planes que se ajustan a vos.</h2>
+      </div>
+      <p class="text-muted max-w-md">No hay un "tier premium". Vos armás. Vos pagás lo que armaste. Ahorro automático según volumen.</p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-3">
+      <div class="bg-bg2 border border-line rounded-3xl p-7">
+        <div class="text-xs text-muted uppercase tracking-wider mb-1">Starter</div>
+        <div class="display text-4xl font-bold num">$ 18.900<span class="text-base text-muted">/mes</span></div>
+        <p class="text-muted text-sm mt-3">1 suplemento. Ideal para arrancar con creatina o whey.</p>
+        <ul class="text-sm space-y-2 mt-6">
+          <li class="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> 1 SKU activo</li>
+          <li class="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Envío estándar</li>
+          <li class="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Pausar / cancelar online</li>
+        </ul>
+      </div>
+
+      <div class="bg-bg2 border-2 border-lime rounded-3xl p-7 relative glow">
+        <span class="chip chip-lime absolute top-5 right-5">popular</span>
+        <div class="text-xs text-lime uppercase tracking-wider mb-1">Stack</div>
+        <div class="display text-4xl font-bold num">$ 47.890<span class="text-base text-muted">/mes</span></div>
+        <p class="text-muted text-sm mt-3">3–5 suplementos. La elección de 7/10 atletas.</p>
+        <ul class="text-sm space-y-2 mt-6">
+          <li class="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Hasta 5 SKUs</li>
+          <li class="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Envío gratis siempre</li>
+          <li class="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> 12% descuento por volumen</li>
+          <li class="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Análisis de rutina mensual</li>
+        </ul>
+      </div>
+
+      <div class="bg-bg2 border border-line rounded-3xl p-7">
+        <div class="text-xs text-muted uppercase tracking-wider mb-1">Atleta</div>
+        <div class="display text-4xl font-bold num">$ 89.500<span class="text-base text-muted">/mes</span></div>
+        <p class="text-muted text-sm mt-3">6+ suplementos. Asesoramiento de un nutricionista deportivo.</p>
+        <ul class="text-sm space-y-2 mt-6">
+          <li class="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> SKUs ilimitados</li>
+          <li class="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Express + envío gratis</li>
+          <li class="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> 18% descuento por volumen</li>
+          <li class="flex items-center gap-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> 1 consulta/mes con nutri</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="bg-bg2 border-t border-line">
+    <div class="max-w-[1180px] mx-auto px-6 lg:px-10 py-20">
+      <h2 class="display text-4xl lg:text-5xl font-bold tracking-tight mb-10">Lo que todos preguntan.</h2>
+      <div class="space-y-2">
+        <details class="bg-bg border border-line rounded-2xl px-6 py-5">
+          <summary class="flex items-center justify-between"><span class="display text-lg font-semibold">¿Qué pasa si me voy de vacaciones?</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A8F85" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></summary>
+          <p class="text-muted mt-4 leading-relaxed">Pausás desde el panel con un click. El sistema corre la fecha de los próximos envíos automáticamente. Volvés y arranca solo.</p>
+        </details>
+        <details class="bg-bg border border-line rounded-2xl px-6 py-5">
+          <summary class="flex items-center justify-between"><span class="display text-lg font-semibold">¿Puedo cambiar de marca?</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A8F85" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></summary>
+          <p class="text-muted mt-4 leading-relaxed">Sí. Para cada suplemento elegís la marca. Si cambiamos de proveedor te avisamos antes. Nunca enviamos algo distinto sin tu OK.</p>
+        </details>
+        <details class="bg-bg border border-line rounded-2xl px-6 py-5">
+          <summary class="flex items-center justify-between"><span class="display text-lg font-semibold">¿Cómo calculan los días de suministro?</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A8F85" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></summary>
+          <p class="text-muted mt-4 leading-relaxed">(Gramos en pote ÷ dosis diaria en gramos) − 4 días de buffer logístico. Para cápsulas: (cantidad ÷ caps por día) − 4. Buffer ajustable.</p>
+        </details>
+        <details class="bg-bg border border-line rounded-2xl px-6 py-5">
+          <summary class="flex items-center justify-between"><span class="display text-lg font-semibold">¿Hacen envíos fuera de CABA / GBA?</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A8F85" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></summary>
+          <p class="text-muted mt-4 leading-relaxed">Sí, a todo el país vía Andreani / OCA. CABA y GBA tienen entrega express opcional.</p>
+        </details>
+        <details class="bg-bg border border-line rounded-2xl px-6 py-5">
+          <summary class="flex items-center justify-between"><span class="display text-lg font-semibold">¿Y si quiero cancelar?</span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A8F85" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></summary>
+          <p class="text-muted mt-4 leading-relaxed">Un botón en tu cuenta. Sin llamadas, sin retención. Sin permanencia mínima.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- big CTA -->
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-24">
+    <div class="bg-bg2 border border-line rounded-[32px] p-10 lg:p-16 relative overflow-hidden">
+      <div class="absolute -bottom-32 -right-20 w-[420px] h-[420px] rounded-full bg-lime/10 blur-[120px] pointer-events-none"></div>
+      <div class="grid lg:grid-cols-12 gap-8 items-center">
+        <div class="lg:col-span-8">
+          <h2 class="display text-4xl lg:text-7xl font-bold tracking-tight leading-[0.92] mb-5">¿Empezamos?<br/><span class="text-lime">Tu próximo envío sale en 4 días.</span></h2>
+          <p class="text-muted text-lg max-w-xl">Aprovechá el primer mes a mitad de precio cuando armás un plan de 3+ suplementos.</p>
+        </div>
+        <div class="lg:col-span-4 flex flex-col gap-3">
+          <button class="btn-primary w-full justify-center py-4" onclick="nav('builder')">
+            Armar mi plan
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </button>
+          <button class="btn-ghost w-full justify-center py-4" onclick="nav('shop')">Ver catálogo primero</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- footer -->
+  <footer class="border-t border-line">
+    <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-10 grid md:grid-cols-12 gap-8 text-sm">
+      <div class="md:col-span-4">
+        <div class="flex items-center gap-2 mb-3">
+          <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+            <rect x="2" y="2" width="28" height="28" rx="9" fill="#C7FF3D"/>
+            <path d="M10 22 V10 H22 M10 16 H19" stroke="#0A0B0A" stroke-width="3" stroke-linecap="square"/>
+          </svg>
+          <span class="display font-bold text-lg">fitsupply<span class="text-lime">.</span></span>
+        </div>
+        <p class="text-muted leading-relaxed">Suplementos por suscripción para gente que entrena en serio y odia hacer logística.</p>
+      </div>
+      <div class="md:col-span-2"><div class="text-muted text-xs uppercase tracking-wider mb-3">Producto</div><ul class="space-y-2"><li><a onclick="nav('shop')" class="cursor-pointer">Catálogo</a></li><li><a onclick="nav('builder')" class="cursor-pointer">Armá tu plan</a></li><li><a>Precios</a></li></ul></div>
+      <div class="md:col-span-2"><div class="text-muted text-xs uppercase tracking-wider mb-3">Cuenta</div><ul class="space-y-2"><li><a onclick="nav('account')" class="cursor-pointer">Mi cuenta</a></li><li><a>Soporte</a></li><li><a>Envíos</a></li></ul></div>
+      <div class="md:col-span-2"><div class="text-muted text-xs uppercase tracking-wider mb-3">Empresa</div><ul class="space-y-2"><li><a>Sobre</a></li><li><a>Marcas</a></li><li><a onclick="nav('admin')" class="cursor-pointer">Operaciones</a></li></ul></div>
+      <div class="md:col-span-2"><div class="text-muted text-xs uppercase tracking-wider mb-3">Legal</div><ul class="space-y-2"><li><a>Términos</a></li><li><a>Privacidad</a></li><li><a>Reembolsos</a></li></ul></div>
+    </div>
+    <div class="border-t border-line py-5 text-center text-xs text-muted num">© 2026 FitSupply SRL · CABA, Argentina · ANMAT pendiente</div>
+  </footer>
+</section>
+
+<!-- ===================== SHOP ===================== -->
+<section class="page" id="page-shop">
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-12">
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-5 mb-8">
+      <div>
+        <span class="chip chip-mut mb-3 inline-flex">catálogo</span>
+        <h1 class="display text-4xl lg:text-6xl font-bold tracking-tight leading-[0.95]">El catálogo curado.</h1>
+        <p class="text-muted mt-3 max-w-xl">Solo marcas con certificación y trazabilidad. No vendemos lo que no probamos.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="seg">
+          <button class="on">Todo</button><button>Performance</button><button>Recuperación</button><button>Salud</button><button>Pre-workout</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- filter bar -->
+    <div class="flex items-center gap-3 mb-6 flex-wrap">
+      <div class="flex-1 min-w-[280px] relative">
+        <svg class="absolute left-4 top-1/2 -translate-y-1/2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A8F85" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input class="w-full bg-bg2 border border-line rounded-full pl-12 pr-4 py-3 text-sm placeholder-muted focus:outline-none focus:border-lime/50" placeholder="Buscar creatina, whey, marca…" />
+      </div>
+      <select class="bg-bg2 border border-line rounded-full px-4 py-3 text-sm focus:outline-none focus:border-lime/50"><option>Todas las marcas</option><option>ENA Sport</option><option>Star Nutrition</option><option>Mervick</option><option>Universal</option><option>Optimum</option><option>Birdman</option></select>
+      <select class="bg-bg2 border border-line rounded-full px-4 py-3 text-sm focus:outline-none focus:border-lime/50"><option>Ordenar por: relevancia</option><option>Precio asc</option><option>Precio desc</option><option>Más vendidos</option></select>
+    </div>
+
+    <div id="shop-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+  </div>
+</section>
+
+<!-- ===================== PLAN BUILDER ===================== -->
+<section class="page" id="page-builder">
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-12">
+    <div class="flex items-center gap-2 mb-4"><span class="chip chip-lime">núcleo del producto</span><span class="chip chip-mut">paso 1 de 3</span></div>
+    <h1 class="display text-4xl lg:text-6xl font-bold tracking-tight leading-[0.95] mb-2">Armá tu plan.</h1>
+    <p class="text-muted mb-10 max-w-2xl">Elegí los suplementos, configurá la dosis diaria y la marca. Calculamos cuándo te llega cada uno y cuánto pagás por mes.</p>
+
+    <div class="grid lg:grid-cols-12 gap-6">
+      <!-- left: catalog to add -->
+      <div class="lg:col-span-7">
+        <div class="bg-bg2 border border-line rounded-3xl p-5">
+          <div class="flex items-center gap-2 mb-4">
+            <h3 class="display text-xl font-semibold flex-1">Suplementos disponibles</h3>
+            <span class="chip chip-mut" id="catalog-count"></span>
+          </div>
+          <div id="builder-catalog" class="grid sm:grid-cols-2 gap-2 max-h-[640px] overflow-y-auto pr-2"></div>
+        </div>
+      </div>
+
+      <!-- right: your plan -->
+      <div class="lg:col-span-5">
+        <div class="sticky top-24">
+          <div class="bg-bg2 border border-line rounded-3xl p-6 glow">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="display text-xl font-semibold">Tu plan</h3>
+              <span class="chip chip-lime chip-dot pulse-dot">en vivo</span>
+            </div>
+
+            <div id="plan-items" class="space-y-3 mb-5"></div>
+
+            <div id="plan-empty" class="text-center py-10 text-muted text-sm">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#8A8F85" stroke-width="1.5" class="mx-auto mb-3"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+              Empezá agregando un suplemento desde la izquierda.
+            </div>
+
+            <div class="hr my-5"></div>
+
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <div class="text-muted text-xs uppercase tracking-wider mb-1">Subtotal</div>
+                <div class="num font-semibold" id="plan-subtotal">$ 0</div>
+              </div>
+              <div>
+                <div class="text-muted text-xs uppercase tracking-wider mb-1">Descuento volumen</div>
+                <div class="num font-semibold text-lime" id="plan-discount">$ 0</div>
+              </div>
+              <div>
+                <div class="text-muted text-xs uppercase tracking-wider mb-1">Envío</div>
+                <div class="num font-semibold" id="plan-shipping">Gratis</div>
+              </div>
+              <div>
+                <div class="text-muted text-xs uppercase tracking-wider mb-1">Total mensual</div>
+                <div class="display text-2xl font-bold num text-lime" id="plan-total">$ 0</div>
+              </div>
+            </div>
+
+            <div class="hr my-5"></div>
+
+            <div>
+              <div class="text-muted text-xs uppercase tracking-wider mb-3">Próximos envíos</div>
+              <div id="plan-shipments" class="space-y-2 text-sm"></div>
+            </div>
+
+            <button class="btn-primary w-full justify-center mt-6 py-4" onclick="checkoutPlan()">
+              Suscribirme · <span id="plan-cta-total">$ 0/mes</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </button>
+            <div class="text-muted text-xs text-center mt-3">Sin permanencia. Cancelás cuando quieras.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ACCOUNT ===================== -->
+<section class="page" id="page-account">
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-12">
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-5 mb-10">
+      <div>
+        <span class="chip chip-mut mb-3 inline-flex">tu plan</span>
+        <h1 class="display text-4xl lg:text-6xl font-bold tracking-tight leading-[0.95]">Hola, Juan.</h1>
+        <p class="text-muted mt-3">Próximo envío en <span class="text-lime num">9 días</span> · <span class="num">3 suplementos</span> activos</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn-ghost">Pausar mes</button>
+        <button class="btn-primary">Modificar plan</button>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-12 gap-4">
+      <!-- KPIs -->
+      <div class="lg:col-span-3 bg-bg2 border border-line rounded-2xl p-5">
+        <div class="text-xs text-muted uppercase tracking-wider mb-2">Costo mensual</div>
+        <div class="display text-3xl font-bold num">$ 47.890</div>
+        <div class="text-xs text-muted mt-1">incluye envío gratis</div>
+      </div>
+      <div class="lg:col-span-3 bg-bg2 border border-line rounded-2xl p-5">
+        <div class="text-xs text-muted uppercase tracking-wider mb-2">Próximo cargo</div>
+        <div class="display text-3xl font-bold num">22 may</div>
+        <div class="text-xs text-muted mt-1">Visa terminada en 4421</div>
+      </div>
+      <div class="lg:col-span-3 bg-bg2 border border-line rounded-2xl p-5">
+        <div class="text-xs text-muted uppercase tracking-wider mb-2">Ahorro YTD</div>
+        <div class="display text-3xl font-bold num text-lime">$ 89.400</div>
+        <div class="text-xs text-muted mt-1">vs comprar suelto</div>
+      </div>
+      <div class="lg:col-span-3 bg-bg2 border border-line rounded-2xl p-5">
+        <div class="text-xs text-muted uppercase tracking-wider mb-2">Antigüedad</div>
+        <div class="display text-3xl font-bold num">3 meses</div>
+        <div class="text-xs text-muted mt-1">desde 12 feb 2026</div>
+      </div>
+
+      <!-- Active subs -->
+      <div class="lg:col-span-8 bg-bg2 border border-line rounded-3xl p-6">
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="display text-xl font-semibold">Suplementos activos</h3>
+          <button class="text-lime text-sm font-semibold">+ Agregar</button>
+        </div>
+        <div class="space-y-3" id="account-subs"></div>
+      </div>
+
+      <!-- Next deliveries -->
+      <div class="lg:col-span-4 bg-bg2 border border-line rounded-3xl p-6">
+        <h3 class="display text-xl font-semibold mb-5">Próximos envíos</h3>
+        <div class="space-y-3 text-sm" id="account-deliveries"></div>
+      </div>
+
+      <!-- Calendar of doses -->
+      <div class="lg:col-span-8 bg-bg2 border border-line rounded-3xl p-6">
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="display text-xl font-semibold">Tu rutina · mayo 2026</h3>
+          <div class="seg"><button class="on">Mes</button><button>Semana</button></div>
+        </div>
+        <div class="grid grid-cols-7 gap-2 mb-2">
+          <div class="text-[10px] text-muted text-center font-semibold">L</div><div class="text-[10px] text-muted text-center font-semibold">M</div><div class="text-[10px] text-muted text-center font-semibold">M</div><div class="text-[10px] text-muted text-center font-semibold">J</div><div class="text-[10px] text-muted text-center font-semibold">V</div><div class="text-[10px] text-muted text-center font-semibold">S</div><div class="text-[10px] text-muted text-center font-semibold">D</div>
+        </div>
+        <div id="dose-calendar" class="grid grid-cols-7 gap-2"></div>
+      </div>
+
+      <!-- History -->
+      <div class="lg:col-span-4 bg-bg2 border border-line rounded-3xl p-6">
+        <h3 class="display text-xl font-semibold mb-5">Historial</h3>
+        <div class="space-y-4 text-sm">
+          <div class="flex items-start gap-3">
+            <div class="w-2 h-2 rounded-full bg-lime mt-1.5"></div>
+            <div class="flex-1">
+              <div class="font-semibold">Envío #2026-0412</div>
+              <div class="text-muted text-xs">12 abr · Whey + Omega + Multivit · $ 47.890</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-2 h-2 rounded-full bg-lime mt-1.5"></div>
+            <div class="flex-1">
+              <div class="font-semibold">Envío #2026-0322</div>
+              <div class="text-muted text-xs">22 mar · Creatina · $ 18.900</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-2 h-2 rounded-full bg-lime mt-1.5"></div>
+            <div class="flex-1">
+              <div class="font-semibold">Envío #2026-0312</div>
+              <div class="text-muted text-xs">12 mar · Whey + Omega · $ 41.290</div>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <div class="w-2 h-2 rounded-full bg-lime mt-1.5"></div>
+            <div class="flex-1">
+              <div class="font-semibold">Plan creado</div>
+              <div class="text-muted text-xs">12 feb · 3 suplementos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ADMIN ===================== -->
+<section class="page" id="page-admin">
+  <div class="max-w-[1600px] mx-auto px-4 lg:px-6 py-6">
+    <div class="grid lg:grid-cols-[240px_minmax(0,1fr)] gap-6">
+
+      <!-- Sidebar -->
+      <aside>
+        <div class="bg-bg2 border border-line rounded-2xl p-4 sticky top-24">
+          <div class="flex items-center gap-2 mb-5">
+            <div class="w-8 h-8 rounded-lg bg-lime flex items-center justify-center"><span class="text-bg font-bold text-sm">FS</span></div>
+            <div>
+              <div class="text-xs font-semibold">FitSupply</div>
+              <div class="text-[10px] text-muted">Admin · prod</div>
+            </div>
+          </div>
+          <div class="space-y-1">
+            <a class="sidelink active" data-admin="overview" onclick="adminTab('overview')"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span> Overview</a>
+            <a class="sidelink" data-admin="subscribers" onclick="adminTab('subscribers')"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> Suscriptores <span class="ml-auto chip chip-mut text-[10px]">2.831</span></a>
+            <a class="sidelink" data-admin="logistics" onclick="adminTab('logistics')"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span> Logística</a>
+            <a class="sidelink" data-admin="inventory" onclick="adminTab('inventory')"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v13h18V7"/><path d="M3 7l3-4h12l3 4"/><path d="M3 7h18"/><path d="M10 12h4"/></svg></span> Inventario</a>
+            <a class="sidelink" data-admin="products" onclick="adminTab('products')"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7" y2="7"/></svg></span> Productos</a>
+            <a class="sidelink" data-admin="revenue" onclick="adminTab('revenue')"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span> Ingresos</a>
+            <a class="sidelink" data-admin="churn" onclick="adminTab('churn')"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v8h8"/></svg></span> Retención</a>
+          </div>
+          <div class="hr my-4"></div>
+          <div class="text-[10px] text-muted uppercase tracking-wider mb-2 px-2">Settings</div>
+          <div class="space-y-1">
+            <a class="sidelink"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> Configuración</a>
+            <a class="sidelink"><span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span> Soporte</a>
+          </div>
+
+          <div class="mt-5 bg-bg border border-line rounded-2xl p-3 flex items-center gap-2">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-lime to-ember"></div>
+            <div class="flex-1 min-w-0">
+              <div class="text-xs font-semibold truncate">Lucía Operaciones</div>
+              <div class="text-[10px] text-muted">admin@fitsupply.ar</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <main>
+
+        <!-- ============ OVERVIEW ============ -->
+        <div class="admin-tab" data-tab="overview">
+          <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6">
+            <div>
+              <div class="text-muted text-sm">Hoy · miércoles 13 may 2026</div>
+              <h2 class="display text-3xl lg:text-4xl font-bold tracking-tight">Buen día, Lucía.</h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="seg"><button>7d</button><button class="on">30d</button><button>90d</button><button>YTD</button></div>
+              <button class="btn-ghost text-sm py-2.5 px-4">Exportar</button>
+            </div>
+          </div>
+
+          <div class="bento mb-4">
+            <div class="col-span-12 md:col-span-3">
+              <div class="text-xs text-muted uppercase tracking-wider mb-2">MRR</div>
+              <div class="flex items-baseline gap-2">
+                <div class="display text-3xl font-bold num">$ 19.42M</div>
+                <span class="chip chip-lime text-[10px]">+18.4%</span>
+              </div>
+              <svg class="sparkline mt-3" width="100%" height="40" viewBox="0 0 200 40" preserveAspectRatio="none">
+                <path d="M0,32 L20,28 L40,30 L60,22 L80,24 L100,18 L120,20 L140,12 L160,14 L180,6 L200,8" />
+                <circle cx="200" cy="8" r="2.5"/>
+              </svg>
+              <div class="text-xs text-muted mt-1">vs $ 16.4M abr</div>
+            </div>
+
+            <div class="col-span-12 md:col-span-3">
+              <div class="text-xs text-muted uppercase tracking-wider mb-2">Suscriptores activos</div>
+              <div class="flex items-baseline gap-2">
+                <div class="display text-3xl font-bold num">2.831</div>
+                <span class="chip chip-lime text-[10px]">+312</span>
+              </div>
+              <div class="grid grid-cols-12 gap-0.5 mt-3">
+                <div class="h-8 col-span-1 bg-line rounded-sm"></div>
+                <div class="h-8 col-span-1 bg-line rounded-sm"></div>
+                <div class="h-8 col-span-1 bg-line/60 rounded-sm"></div>
+                <div class="h-8 col-span-1 bg-lime/40 rounded-sm"></div>
+                <div class="h-8 col-span-1 bg-lime/40 rounded-sm"></div>
+                <div class="h-8 col-span-1 bg-lime/60 rounded-sm"></div>
+                <div class="h-8 col-span-1 bg-lime/60 rounded-sm"></div>
+                <div class="h-8 col-span-1 bg-lime/80 rounded-sm"></div>
+                <div class="h-8 col-span-1 bg-lime rounded-sm"></div>
+                <div class="h-8 col-span-1 bg-lime rounded-sm"></div>
+                <div class="h-8 col-span-1 bg-lime rounded-sm"></div>
+                <div class="h-8 col-span-1 bg-lime ring-2 ring-lime/30 rounded-sm"></div>
+              </div>
+              <div class="text-xs text-muted mt-1">crecimiento mensual</div>
+            </div>
+
+            <div class="col-span-12 md:col-span-3">
+              <div class="text-xs text-muted uppercase tracking-wider mb-2">Churn 30d</div>
+              <div class="flex items-baseline gap-2">
+                <div class="display text-3xl font-bold num">2.1%</div>
+                <span class="chip chip-mut text-[10px]">-0.4pp</span>
+              </div>
+              <div class="mt-4 flex items-center gap-2">
+                <div class="flex-1 h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-lime" style="width:21%"></div></div>
+                <span class="num text-xs text-muted">≤ 3% obj</span>
+              </div>
+              <div class="text-xs text-muted mt-2">59 cancelados · 312 nuevos</div>
+            </div>
+
+            <div class="col-span-12 md:col-span-3">
+              <div class="text-xs text-muted uppercase tracking-wider mb-2">ARPU</div>
+              <div class="flex items-baseline gap-2">
+                <div class="display text-3xl font-bold num">$ 6.860</div>
+                <span class="chip chip-lime text-[10px]">+4.2%</span>
+              </div>
+              <div class="mt-3 grid grid-cols-3 gap-2 text-xs">
+                <div><div class="text-muted text-[10px]">Starter</div><div class="num font-semibold">$ 18k</div></div>
+                <div><div class="text-muted text-[10px]">Stack</div><div class="num font-semibold">$ 48k</div></div>
+                <div><div class="text-muted text-[10px]">Atleta</div><div class="num font-semibold">$ 89k</div></div>
+              </div>
+            </div>
+
+            <!-- Revenue chart -->
+            <div class="col-span-12 lg:col-span-8" style="grid-row: span 2;">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <div class="text-xs text-muted uppercase tracking-wider">Ingresos diarios</div>
+                  <div class="display text-2xl font-bold num">$ 647.890 <span class="text-muted text-sm font-normal">hoy</span></div>
+                </div>
+                <div class="seg"><button class="on">Línea</button><button>Barras</button></div>
+              </div>
+              <canvas id="chart-revenue" height="200"></canvas>
+            </div>
+
+            <!-- Today's shipments -->
+            <div class="col-span-12 lg:col-span-4" style="grid-row: span 2;">
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <div class="text-xs text-muted uppercase tracking-wider">Envíos de hoy</div>
+                  <div class="display text-2xl font-bold num">147 paquetes</div>
+                </div>
+                <span class="chip chip-lime chip-dot pulse-dot">en preparación</span>
+              </div>
+              <div class="space-y-2 max-h-[260px] overflow-y-auto pr-1" id="today-shipments"></div>
+              <button class="w-full mt-3 text-sm text-lime font-semibold py-2 border border-lime/30 rounded-full" onclick="adminTab('logistics')">Ver toda la logística →</button>
+            </div>
+
+            <!-- Top SKUs -->
+            <div class="col-span-12 lg:col-span-6">
+              <div class="flex items-center justify-between mb-3">
+                <div class="text-xs text-muted uppercase tracking-wider">Top suplementos 30d</div>
+              </div>
+              <div id="top-skus" class="space-y-3"></div>
+            </div>
+
+            <!-- Plan mix -->
+            <div class="col-span-12 lg:col-span-6">
+              <div class="text-xs text-muted uppercase tracking-wider mb-3">Distribución de planes</div>
+              <canvas id="chart-mix" height="180"></canvas>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============ SUBSCRIBERS ============ -->
+        <div class="admin-tab hidden" data-tab="subscribers">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="display text-3xl font-bold tracking-tight">Suscriptores</h2>
+              <p class="text-muted text-sm">2.831 activos · 412 pausados · 59 cancelados (30d)</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="btn-ghost text-sm py-2.5 px-4">Filtros</button>
+              <button class="btn-primary text-sm py-2.5 px-4">+ Nuevo</button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 mb-4">
+            <div class="seg"><button class="on">Todos (2.831)</button><button>Activos</button><button>Pausados</button><button>Cancelados</button><button>En riesgo</button></div>
+            <div class="ml-auto relative">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A8F85" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input class="bg-bg2 border border-line rounded-full pl-9 pr-4 py-2 text-sm w-72" placeholder="Buscar nombre, mail, plan…" />
+            </div>
+          </div>
+
+          <div class="bg-bg2 border border-line rounded-3xl overflow-hidden">
+            <table class="table w-full">
+              <thead>
+                <tr>
+                  <th>Suscriptor</th>
+                  <th>Plan</th>
+                  <th>SKUs</th>
+                  <th>MRR</th>
+                  <th>Próximo envío</th>
+                  <th>Antigüedad</th>
+                  <th>Estado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="subs-tbody"></tbody>
+            </table>
+          </div>
+          <div class="flex items-center justify-between mt-4 text-xs text-muted">
+            <div>Mostrando 1–25 de 2.831</div>
+            <div class="flex items-center gap-2"><button class="px-3 py-1.5 border border-line rounded-md">Anterior</button><span class="num">página 1 de 114</span><button class="px-3 py-1.5 border border-line rounded-md">Siguiente</button></div>
+          </div>
+        </div>
+
+        <!-- ============ LOGISTICS ============ -->
+        <div class="admin-tab hidden" data-tab="logistics">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="display text-3xl font-bold tracking-tight">Logística</h2>
+              <p class="text-muted text-sm">Calendario de envíos · próximos 28 días</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="seg"><button class="on">Calendario</button><button>Lista</button><button>Mapa</button></div>
+              <button class="btn-ghost text-sm py-2.5 px-4">Exportar CSV</button>
+              <button class="btn-primary text-sm py-2.5 px-4">Cerrar día</button>
+            </div>
+          </div>
+
+          <!-- KPIs -->
+          <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+            <div class="bg-bg2 border border-line rounded-2xl p-4"><div class="text-[10px] text-muted uppercase tracking-wider">Hoy</div><div class="display text-2xl font-bold num">147</div><div class="text-xs text-muted">paquetes</div></div>
+            <div class="bg-bg2 border border-line rounded-2xl p-4"><div class="text-[10px] text-muted uppercase tracking-wider">Mañana</div><div class="display text-2xl font-bold num">132</div><div class="text-xs text-muted">paquetes</div></div>
+            <div class="bg-bg2 border border-line rounded-2xl p-4"><div class="text-[10px] text-muted uppercase tracking-wider">Semana</div><div class="display text-2xl font-bold num">948</div><div class="text-xs text-muted">paquetes</div></div>
+            <div class="bg-bg2 border border-line rounded-2xl p-4"><div class="text-[10px] text-muted uppercase tracking-wider">En tránsito</div><div class="display text-2xl font-bold num text-lime">312</div><div class="text-xs text-muted">Andreani · OCA</div></div>
+            <div class="bg-bg2 border border-line rounded-2xl p-4"><div class="text-[10px] text-muted uppercase tracking-wider">Entregados 7d</div><div class="display text-2xl font-bold num">874</div><div class="text-xs text-muted">98.4% on-time</div></div>
+          </div>
+
+          <!-- Calendar -->
+          <div class="bg-bg2 border border-line rounded-3xl p-6 mb-4">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="display text-xl font-semibold">Mayo 2026</h3>
+              <div class="flex items-center gap-1">
+                <button class="w-8 h-8 border border-line rounded-md flex items-center justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+                <button class="w-8 h-8 border border-line rounded-md flex items-center justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+              </div>
+            </div>
+            <div class="grid grid-cols-7 gap-2 mb-2">
+              <div class="text-[10px] text-muted text-center font-semibold uppercase">Lun</div><div class="text-[10px] text-muted text-center font-semibold uppercase">Mar</div><div class="text-[10px] text-muted text-center font-semibold uppercase">Mié</div><div class="text-[10px] text-muted text-center font-semibold uppercase">Jue</div><div class="text-[10px] text-muted text-center font-semibold uppercase">Vie</div><div class="text-[10px] text-muted text-center font-semibold uppercase">Sáb</div><div class="text-[10px] text-muted text-center font-semibold uppercase">Dom</div>
+            </div>
+            <div id="logistics-calendar" class="grid grid-cols-7 gap-2"></div>
+
+            <div class="flex items-center gap-5 mt-5 text-xs text-muted">
+              <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-lime"></div> Día con envíos</div>
+              <div class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-ember"></div> Pico de carga</div>
+              <div class="flex items-center gap-2"><div class="w-3 h-3 rounded border border-line"></div> Sin envíos</div>
+              <div class="flex items-center gap-2"><div class="w-3 h-3 rounded ring-2 ring-lime"></div> Hoy</div>
+            </div>
+          </div>
+
+          <!-- Next shipments list -->
+          <div class="bg-bg2 border border-line rounded-3xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-line flex items-center justify-between">
+              <h3 class="display text-xl font-semibold">Próximos envíos · hoy y mañana</h3>
+              <span class="text-xs text-muted">279 paquetes</span>
+            </div>
+            <table class="table w-full">
+              <thead>
+                <tr><th>#Orden</th><th>Cliente</th><th>Items</th><th>Carrier</th><th>Destino</th><th>Salida</th><th>Estado</th><th></th></tr>
+              </thead>
+              <tbody id="logistics-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ============ INVENTORY ============ -->
+        <div class="admin-tab hidden" data-tab="inventory">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="display text-3xl font-bold tracking-tight">Inventario</h2>
+              <p class="text-muted text-sm">Stock por SKU · alertas de reposición</p>
+            </div>
+            <button class="btn-primary text-sm py-2.5 px-4">+ Ingreso</button>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <div class="bg-bg2 border border-line rounded-2xl p-4"><div class="text-[10px] text-muted uppercase tracking-wider">Valor stock</div><div class="display text-2xl font-bold num">$ 38.4M</div></div>
+            <div class="bg-bg2 border border-line rounded-2xl p-4"><div class="text-[10px] text-muted uppercase tracking-wider">SKUs</div><div class="display text-2xl font-bold num">42</div></div>
+            <div class="bg-bg2 border border-line rounded-2xl p-4"><div class="text-[10px] text-muted uppercase tracking-wider">Alertas</div><div class="display text-2xl font-bold num text-ember">7</div><div class="text-xs text-muted">stock bajo</div></div>
+            <div class="bg-bg2 border border-line rounded-2xl p-4"><div class="text-[10px] text-muted uppercase tracking-wider">Cobertura prom.</div><div class="display text-2xl font-bold num">34 días</div></div>
+          </div>
+
+          <div class="bg-bg2 border border-line rounded-3xl overflow-hidden">
+            <table class="table w-full">
+              <thead><tr><th>SKU</th><th>Producto</th><th>Marca</th><th>Stock</th><th>Reservado</th><th>Disponible</th><th>Cobertura</th><th>Estado</th></tr></thead>
+              <tbody id="inventory-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ============ PRODUCTS ============ -->
+        <div class="admin-tab hidden" data-tab="products">
+          <div class="flex items-center justify-between mb-6">
+            <div><h2 class="display text-3xl font-bold tracking-tight">Productos</h2><p class="text-muted text-sm">Catálogo activo · marcas y dosis recomendadas</p></div>
+            <div class="flex items-center gap-2">
+              <button class="btn-ghost text-sm py-2.5 px-4">Importar CSV</button>
+              <button class="btn-primary text-sm py-2.5 px-4">+ Nuevo producto</button>
+            </div>
+          </div>
+          <div id="admin-products-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"></div>
+        </div>
+
+        <!-- ============ REVENUE ============ -->
+        <div class="admin-tab hidden" data-tab="revenue">
+          <div class="flex items-center justify-between mb-6">
+            <div><h2 class="display text-3xl font-bold tracking-tight">Ingresos</h2><p class="text-muted text-sm">Mayo 2026 · MRR, cohortes, márgenes</p></div>
+            <div class="seg"><button>7d</button><button>30d</button><button class="on">90d</button><button>YTD</button></div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-4">
+            <div class="bg-bg2 border border-line rounded-2xl p-5"><div class="text-xs text-muted uppercase tracking-wider mb-2">MRR</div><div class="display text-3xl font-bold num">$ 19.42M</div><canvas id="rev-1" height="60"></canvas></div>
+            <div class="bg-bg2 border border-line rounded-2xl p-5"><div class="text-xs text-muted uppercase tracking-wider mb-2">Net new MRR</div><div class="display text-3xl font-bold num text-lime">$ 2.97M</div><canvas id="rev-2" height="60"></canvas></div>
+            <div class="bg-bg2 border border-line rounded-2xl p-5"><div class="text-xs text-muted uppercase tracking-wider mb-2">LTV / CAC</div><div class="display text-3xl font-bold num">5.4x</div><canvas id="rev-3" height="60"></canvas></div>
+          </div>
+
+          <div class="bg-bg2 border border-line rounded-3xl p-6 mb-4">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="display text-xl font-semibold">Composición MRR</h3>
+            </div>
+            <canvas id="chart-mrr" height="100"></canvas>
+          </div>
+
+          <div class="grid lg:grid-cols-2 gap-3">
+            <div class="bg-bg2 border border-line rounded-3xl p-6">
+              <h3 class="display text-xl font-semibold mb-4">Cohortes · retención mes-a-mes</h3>
+              <div id="cohort-table" class="text-xs"></div>
+            </div>
+            <div class="bg-bg2 border border-line rounded-3xl p-6">
+              <h3 class="display text-xl font-semibold mb-4">Top marcas por revenue</h3>
+              <div id="brand-revenue" class="space-y-3"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ CHURN ============ -->
+        <div class="admin-tab hidden" data-tab="churn">
+          <div class="flex items-center justify-between mb-6">
+            <div><h2 class="display text-3xl font-bold tracking-tight">Retención</h2><p class="text-muted text-sm">Churn, motivos y suscriptores en riesgo</p></div>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <div class="bg-bg2 border border-line rounded-2xl p-4"><div class="text-[10px] text-muted uppercase tracking-wider">Churn 30d</div><div class="display text-2xl font-bold num">2.1%</div></div>
+            <div class="bg-bg2 border border-line rounded-2xl p-4"><div class="text-[10px] text-muted uppercase tracking-wider">En riesgo</div><div class="display text-2xl font-bold num text-ember">87</div></div>
+            <div class="bg-bg2 border border-line rounded-2xl p-4"><div class="text-[10px] text-muted uppercase tracking-wider">Pausados</div><div class="display text-2xl font-bold num">412</div></div>
+            <div class="bg-bg2 border border-line rounded-2xl p-4"><div class="text-[10px] text-muted uppercase tracking-wider">Reactivados 30d</div><div class="display text-2xl font-bold num text-lime">128</div></div>
+          </div>
+
+          <div class="grid lg:grid-cols-2 gap-3">
+            <div class="bg-bg2 border border-line rounded-3xl p-6">
+              <h3 class="display text-xl font-semibold mb-4">Motivos de cancelación · 30d</h3>
+              <div class="space-y-3">
+                <div><div class="flex justify-between text-sm mb-1"><span>Precio</span><span class="num">38%</span></div><div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-ember" style="width:38%"></div></div></div>
+                <div><div class="flex justify-between text-sm mb-1"><span>Cambió de marca preferida</span><span class="num">22%</span></div><div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-[#FFB545]" style="width:22%"></div></div></div>
+                <div><div class="flex justify-between text-sm mb-1"><span>Dejó de entrenar</span><span class="num">18%</span></div><div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-[#FFD245]" style="width:18%"></div></div></div>
+                <div><div class="flex justify-between text-sm mb-1"><span>Encontró más barato</span><span class="num">12%</span></div><div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-[#9EC0FF]" style="width:12%"></div></div></div>
+                <div><div class="flex justify-between text-sm mb-1"><span>Otro</span><span class="num">10%</span></div><div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-muted" style="width:10%"></div></div></div>
+              </div>
+            </div>
+            <div class="bg-bg2 border border-line rounded-3xl p-6">
+              <h3 class="display text-xl font-semibold mb-4">Suscriptores en riesgo</h3>
+              <div id="at-risk" class="space-y-3"></div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== MARKET RESEARCH ===================== -->
+<section class="page" id="page-market">
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-12">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="chip chip-lime">research mayo 2026</span>
+      <span class="chip chip-mut">datos: Mordor, Mercado Fitness, UBA, Tiendanube</span>
+    </div>
+    <h1 class="display text-4xl lg:text-6xl font-bold tracking-tight leading-[0.95] max-w-3xl">Market Research<br/><span class="text-lime">Argentina 2026.</span></h1>
+    <p class="text-muted mt-4 max-w-2xl">Tamaño del mercado, comportamiento del consumidor, competencia y oportunidad de modelo suscripción. Todos los datos están citados — links al pie.</p>
+
+    <!-- big KPIs -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-10">
+      <div class="bg-bg2 border border-line rounded-3xl p-5">
+        <div class="text-[10px] text-muted uppercase tracking-wider mb-2">Mercado suplementos AR</div>
+        <div class="display text-3xl font-bold num">US$ 25.8M</div>
+        <div class="text-xs text-muted mt-1">2025 · proyección US$ 38.5M a 2030</div>
+        <div class="flex items-center gap-1.5 mt-3"><span class="chip chip-lime text-[10px]">CAGR +8.33%</span></div>
+      </div>
+      <div class="bg-bg2 border border-line rounded-3xl p-5">
+        <div class="text-[10px] text-muted uppercase tracking-wider mb-2">Usuarios de gym AR</div>
+        <div class="display text-3xl font-bold num">3.6M</div>
+        <div class="text-xs text-muted mt-1">penetración 7.8% — la más alta de LATAM</div>
+        <div class="flex items-center gap-1.5 mt-3"><span class="chip chip-mut text-[10px]">8.662 gimnasios</span></div>
+      </div>
+      <div class="bg-bg2 border border-line rounded-3xl p-5">
+        <div class="text-[10px] text-muted uppercase tracking-wider mb-2">Adultos AMBA que toman supl.</div>
+        <div class="display text-3xl font-bold num text-lime">44%</div>
+        <div class="text-xs text-muted mt-1">70% sostiene +3 meses (estudio UBA)</div>
+        <div class="flex items-center gap-1.5 mt-3"><span class="chip chip-mut text-[10px]">target ideal sub</span></div>
+      </div>
+      <div class="bg-bg2 border border-line rounded-3xl p-5">
+        <div class="text-[10px] text-muted uppercase tracking-wider mb-2">Ticket prom. e-commerce AR</div>
+        <div class="display text-3xl font-bold num">AR$ 90.4k</div>
+        <div class="text-xs text-muted mt-1">2025 · alineado al stack mensual</div>
+        <div class="flex items-center gap-1.5 mt-3"><span class="chip chip-lime text-[10px]">22M órdenes +30%</span></div>
+      </div>
+    </div>
+
+    <!-- charts row -->
+    <div class="grid lg:grid-cols-12 gap-3 mt-4">
+      <div class="lg:col-span-7 bg-bg2 border border-line rounded-3xl p-6">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h3 class="display text-xl font-semibold">Proyección de mercado AR · 2025–2030</h3>
+            <div class="text-muted text-xs">en USD millones · CAGR 8.33%</div>
+          </div>
+          <span class="chip chip-mut text-[10px]">fuente: Mordor Intelligence</span>
+        </div>
+        <canvas id="m-market" height="220"></canvas>
+      </div>
+      <div class="lg:col-span-5 bg-bg2 border border-line rounded-3xl p-6">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h3 class="display text-xl font-semibold">Distribución por canal</h3>
+            <div class="text-muted text-xs">2024 · share del mercado AR</div>
+          </div>
+        </div>
+        <canvas id="m-channel" height="220"></canvas>
+        <div class="text-xs text-muted mt-2">Online crece a CAGR <span class="text-lime num">+10.18%</span> — el canal de mayor expansión.</div>
+      </div>
+
+      <!-- LATAM context -->
+      <div class="lg:col-span-7 bg-bg2 border border-line rounded-3xl p-6">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h3 class="display text-xl font-semibold">LATAM Sports Nutrition · 2025–2035</h3>
+            <div class="text-muted text-xs">USD miles de millones · CAGR 12.7%</div>
+          </div>
+          <span class="chip chip-mut text-[10px]">fuente: Future Market Insights</span>
+        </div>
+        <canvas id="m-latam" height="220"></canvas>
+      </div>
+
+      <div class="lg:col-span-5 bg-bg2 border border-line rounded-3xl p-6">
+        <h3 class="display text-xl font-semibold mb-3">Penetración fitness · LATAM</h3>
+        <div class="space-y-3 text-sm">
+          <div>
+            <div class="flex justify-between mb-1"><span>Argentina</span><span class="num text-lime font-semibold">7.8%</span></div>
+            <div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-lime" style="width:78%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-1"><span>Brasil</span><span class="num">5.4%</span></div>
+            <div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-[#9EC0FF]" style="width:54%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-1"><span>Chile</span><span class="num">4.9%</span></div>
+            <div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-[#9EC0FF]" style="width:49%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-1"><span>México</span><span class="num">3.7%</span></div>
+            <div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-[#9EC0FF]" style="width:37%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-1"><span>Colombia</span><span class="num">2.9%</span></div>
+            <div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-[#9EC0FF]" style="width:29%"></div></div>
+          </div>
+        </div>
+        <p class="text-muted text-xs mt-4">AR tiene el mejor ratio gym-goers / población. Es el mercado más rentable de la región en per cápita.</p>
+      </div>
+    </div>
+
+    <!-- competition + brands + pricing -->
+    <div class="grid lg:grid-cols-12 gap-3 mt-4">
+      <div class="lg:col-span-7 bg-bg2 border border-line rounded-3xl p-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="display text-xl font-semibold">Competencia · landscape AR</h3>
+          <span class="chip chip-mut text-[10px]">tiendas relevadas</span>
+        </div>
+        <table class="table w-full">
+          <thead><tr><th>Player</th><th>Modelo</th><th>Suscripción</th><th>Foco</th></tr></thead>
+          <tbody>
+            <tr><td><span class="font-semibold">EnergyZone</span></td><td>E-commerce one-shot</td><td><span class="chip chip-mut text-[10px]">no</span></td><td>Premium importado (ON, BSN, MyProtein)</td></tr>
+            <tr><td><span class="font-semibold">Morashop</span></td><td>Multi-marca + mayorista</td><td><span class="chip chip-mut text-[10px]">no</span></td><td>Cobertura nacional</td></tr>
+            <tr><td><span class="font-semibold">Suplementos Argentinos</span></td><td>Tienda online</td><td><span class="chip chip-mut text-[10px]">no</span></td><td>Mid-tier</td></tr>
+            <tr><td><span class="font-semibold">GNC Argentina</span></td><td>Retail físico + online</td><td><span class="chip chip-mut text-[10px]">no</span></td><td>Multi-marca premium</td></tr>
+            <tr><td><span class="font-semibold">Disfit</span></td><td>Distribuidor Star Nutrition</td><td><span class="chip chip-mut text-[10px]">no</span></td><td>Marcas locales</td></tr>
+            <tr><td><span class="font-semibold">Mercado Libre</span></td><td>Marketplace</td><td><span class="chip chip-mut text-[10px]">no</span></td><td>Long-tail vendors</td></tr>
+            <tr style="background:rgba(199,255,61,0.04)"><td><span class="font-semibold text-lime">FitSupply</span></td><td>Suscripción + logística predictiva</td><td><span class="chip chip-lime text-[10px]">sí · única</span></td><td><span class="text-lime">Stack mensual personalizado</span></td></tr>
+          </tbody>
+        </table>
+        <p class="text-muted text-xs mt-3">Ninguno de los players relevados opera modelo de suscripción auto-renovable con cálculo de consumo. <span class="text-lime">El GAP está vacío.</span></p>
+      </div>
+
+      <div class="lg:col-span-5 bg-bg2 border border-line rounded-3xl p-6">
+        <h3 class="display text-xl font-semibold mb-3">Marcas dominantes · share AR (estim.)</h3>
+        <canvas id="m-brands" height="220"></canvas>
+        <p class="text-muted text-xs mt-3">Marcas locales (ENA, Star, Gentech, Mervick) capturan ~60% del retail. <span class="text-lime">Empezar con ellas mitiga el riesgo de importación post-ANMAT 35/2025.</span></p>
+      </div>
+
+      <!-- Pricing benchmark -->
+      <div class="lg:col-span-12 bg-bg2 border border-line rounded-3xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="display text-xl font-semibold">Benchmark de precios · CABA 2025–2026</h3>
+          <span class="chip chip-mut text-[10px]">ARS · fuente: SA Suplementos, Morashop, Gentech, Disfit</span>
+        </div>
+        <table class="table w-full">
+          <thead><tr><th>Producto</th><th>Marca</th><th>Precio retail</th><th>Precio FitSupply sub</th><th>Ahorro</th></tr></thead>
+          <tbody>
+            <tr><td>Creatina micronizada 300g</td><td>ENA Sport</td><td class="num">AR$ 25.000</td><td class="num text-lime">AR$ 18.900</td><td><span class="chip chip-lime text-[10px]">−24%</span></td></tr>
+            <tr><td>Whey 1kg vainilla</td><td>Star Nutrition</td><td class="num">AR$ 42.000</td><td class="num text-lime">AR$ 32.400</td><td><span class="chip chip-lime text-[10px]">−23%</span></td></tr>
+            <tr><td>Whey 908g</td><td>Gentech</td><td class="num">AR$ 65.999</td><td class="num text-lime">AR$ 48.900</td><td><span class="chip chip-lime text-[10px]">−26%</span></td></tr>
+            <tr><td>Omega-3 60 caps</td><td>Mervick</td><td class="num">AR$ 18.940</td><td class="num text-lime">AR$ 14.500</td><td><span class="chip chip-lime text-[10px]">−23%</span></td></tr>
+            <tr><td>Stack base (creatina + whey + omega + multivit)</td><td>Mix</td><td class="num">AR$ 130.000</td><td class="num text-lime">AR$ 89.500</td><td><span class="chip chip-lime text-[10px]">−31%</span></td></tr>
+          </tbody>
+        </table>
+        <p class="text-muted text-xs mt-3">El consumidor argentino post-2024 valora previsibilidad > descuento puntual. <span class="text-lime">47% abandonó primeras marcas para mitigar inflación</span> (Kantar 2024) → mensaje correcto: "precio congelado por 3 meses".</p>
+      </div>
+    </div>
+
+    <!-- subscription benchmarks -->
+    <div class="grid lg:grid-cols-12 gap-3 mt-4">
+      <div class="lg:col-span-6 bg-bg2 border border-line rounded-3xl p-6">
+        <h3 class="display text-xl font-semibold mb-3">Benchmarks de churn · subscription boxes</h3>
+        <canvas id="m-churn" height="200"></canvas>
+        <p class="text-muted text-xs mt-3">Para suplementos esperamos 5–8% mensual. Plan anual baja a 0.5–1.5%. <span class="text-lime">Push a anual desde mes 2 es el lever clave</span> (caso Hims/Hers: 82% retiene +3m).</p>
+      </div>
+
+      <div class="lg:col-span-6 bg-bg2 border border-line rounded-3xl p-6">
+        <h3 class="display text-xl font-semibold mb-3">Modelos comparables · learnings</h3>
+        <div class="space-y-4 text-sm">
+          <div class="flex gap-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-lime to-ember flex items-center justify-center display font-bold text-bg flex-shrink-0">H</div>
+            <div>
+              <div class="font-semibold mb-1">Hims & Hers <span class="chip chip-lime text-[10px] ml-1">+90% MRR</span></div>
+              <div class="text-muted leading-relaxed">90%+ revenue es recurrente. Bundles personalizados generan switching friction. Riesgo: regulación de easy-cancellation puede subir churn 30-50%.</div>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-ember to-lime flex items-center justify-center display font-bold text-bg flex-shrink-0">C</div>
+            <div>
+              <div class="font-semibold mb-1">Care/of <span class="chip chip-mut text-[10px] ml-1">cerró 2023</span></div>
+              <div class="text-muted leading-relaxed">Personalización por quiz, vitaminas diarias. Cerró por unit economics frágiles en personalización extrema. <span class="text-lime">Lección: simplificar SKUs.</span></div>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#9EC0FF] to-lime flex items-center justify-center display font-bold text-bg flex-shrink-0">L</div>
+            <div>
+              <div class="font-semibold mb-1">LATAM <span class="chip chip-mut text-[10px] ml-1">first-mover</span></div>
+              <div class="text-muted leading-relaxed">No hay equivalente exitoso en suplementos deportivos. México admite que "no han despegado". <span class="text-lime">Ventaja de primer movimiento real en AR.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- insights + risks -->
+    <div class="grid lg:grid-cols-12 gap-3 mt-4">
+      <div class="lg:col-span-7 bg-bg2 border border-line rounded-3xl p-6">
+        <h3 class="display text-xl font-semibold mb-4">5 insights accionables</h3>
+        <div class="space-y-4">
+          <div class="flex gap-4">
+            <div class="num text-3xl text-lime font-bold leading-none flex-shrink-0">01</div>
+            <div><div class="font-semibold mb-1">Posicionar contra inflación, no precio absoluto</div><div class="text-muted text-sm">"Tu stack congelado por 3 meses" pega más que "10% off". 47% del consumidor abandonó primeras marcas por inflación.</div></div>
+          </div>
+          <div class="flex gap-4">
+            <div class="num text-3xl text-lime font-bold leading-none flex-shrink-0">02</div>
+            <div><div class="font-semibold mb-1">Empezar con marcas locales</div><div class="text-muted text-sm">ENA, Star, Gentech, Mervick → evitar exposición a importación y restricciones ANMAT 35/2025.</div></div>
+          </div>
+          <div class="flex gap-4">
+            <div class="num text-3xl text-lime font-bold leading-none flex-shrink-0">03</div>
+            <div><div class="font-semibold mb-1">Stack "esencial" a AR$ 80–110k mensual</div><div class="text-muted text-sm">Alineado al ticket promedio e-commerce AR (AR$ 90.4k). Ofrecer 2-3 cuotas sin interés con MercadoPago.</div></div>
+          </div>
+          <div class="flex gap-4">
+            <div class="num text-3xl text-lime font-bold leading-none flex-shrink-0">04</div>
+            <div><div class="font-semibold mb-1">Convertir a anual desde mes 2</div><div class="text-muted text-sm">Caso Hims/Hers + Eightx: anual baja churn 5x. Es la palanca de unit economics más alta.</div></div>
+          </div>
+          <div class="flex gap-4">
+            <div class="num text-3xl text-lime font-bold leading-none flex-shrink-0">05</div>
+            <div><div class="font-semibold mb-1">Forecasting de consumo como diferenciador #1</div><div class="text-muted text-sm">"Te avisamos antes de que se acabe" es la única razón válida para suscribirse vs. ML. Medir desde día 1.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-5 bg-bg2 border border-line rounded-3xl p-6">
+        <h3 class="display text-xl font-semibold mb-4">Riesgos críticos</h3>
+        <div class="space-y-3">
+          <div class="bg-bg border border-line rounded-xl p-4 border-l-4 border-l-ember">
+            <div class="flex items-center justify-between mb-1"><div class="font-semibold text-sm">ANMAT 35/2025</div><span class="chip text-[10px] bg-ember/10 text-ember border border-ember/30">alto</span></div>
+            <div class="text-muted text-xs leading-relaxed">Endurece importación de suplementos "alto riesgo". Productos sin libre comercialización US/UE requieren RNE+RNPA. Mitigación: 70% catálogo local.</div>
+          </div>
+          <div class="bg-bg border border-line rounded-xl p-4 border-l-4 border-l-ember">
+            <div class="flex items-center justify-between mb-1"><div class="font-semibold text-sm">Exposición FX</div><span class="chip text-[10px] bg-ember/10 text-ember border border-ember/30">alto</span></div>
+            <div class="text-muted text-xs leading-relaxed">Si stack es importado, exposición al CCL. Revisión de precios cada 60–90 días + cláusula clara.</div>
+          </div>
+          <div class="bg-bg border border-line rounded-xl p-4 border-l-4 border-l-[#FFD245]">
+            <div class="flex items-center justify-between mb-1"><div class="font-semibold text-sm">Logística stockout</div><span class="chip text-[10px] bg-[#FFD245]/10 text-[#FFD245] border border-[#FFD245]/30">medio</span></div>
+            <div class="text-muted text-xs leading-relaxed">Correo Argentino 3–7 días. Necesario Andreani + buffer CABA/GBA para cumplir "la promesa".</div>
+          </div>
+          <div class="bg-bg border border-line rounded-xl p-4 border-l-4 border-l-[#FFD245]">
+            <div class="flex items-center justify-between mb-1"><div class="font-semibold text-sm">Churn benchmark 5–8%</div><span class="chip text-[10px] bg-[#FFD245]/10 text-[#FFD245] border border-[#FFD245]/30">medio</span></div>
+            <div class="text-muted text-xs leading-relaxed">Necesario retener 30–40% a 12 meses para tener unit economics sanos.</div>
+          </div>
+          <div class="bg-bg border border-line rounded-xl p-4 border-l-4 border-l-line">
+            <div class="flex items-center justify-between mb-1"><div class="font-semibold text-sm">MercadoPago tarifa</div><span class="chip text-[10px] bg-muted/10 text-muted border border-line">bajo</span></div>
+            <div class="text-muted text-xs leading-relaxed">Histórico de cambios hostiles. Tener Payway + Rebill como switch de emergencia.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- sources -->
+    <div class="bg-bg2 border border-line rounded-3xl p-6 mt-4">
+      <div class="text-xs text-muted uppercase tracking-wider mb-3">Fuentes</div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-xs">
+        <a href="https://www.mordorintelligence.ar/industry-reports/sport-supplement-market" target="_blank" class="text-muted hover:text-lime">→ Mordor Intelligence · Suplementos AR</a>
+        <a href="https://mercadofitness.com/nivel-penetracion-fitness-argentina-radiografia-2024-mercado-fitness/" target="_blank" class="text-muted hover:text-lime">→ Mercado Fitness · Radiografía 2024</a>
+        <a href="https://www.cronista.com/deporte/en-argentina-el-negocio-de-los-gimnasios-ya-factura-us-1000-millones-al-ano/" target="_blank" class="text-muted hover:text-lime">→ El Cronista · Gym industry USD 1B</a>
+        <a href="https://saludpublica.ms.gba.gov.ar/index.php/revista/article/view/499" target="_blank" class="text-muted hover:text-lime">→ Estudio UBA · Consumo en AMBA</a>
+        <a href="https://www.futuremarketinsights.com/reports/latin-america-sports-nutrition-market" target="_blank" class="text-muted hover:text-lime">→ Future Market Insights · LATAM</a>
+        <a href="https://www.tiendanube.com/blog/ecommerce-informe/" target="_blank" class="text-muted hover:text-lime">→ Tiendanube · NubeCommerce 2026</a>
+        <a href="https://www.infobae.com/economia/2024/10/16/casi-la-mitad-de-los-consumidores-argentinos-dejo-de-comprar-productos-de-primeras-marcas-para-sortear-la-inflacion/" target="_blank" class="text-muted hover:text-lime">→ Infobae/Kantar · Primeras marcas</a>
+        <a href="https://www.infobae.com/salud/2025/01/30/como-se-implantaran-las-nuevas-reglamentaciones-de-la-anmat-para-la-importacion-y-exportacion-de-alimentos/" target="_blank" class="text-muted hover:text-lime">→ Infobae · ANMAT 35/2025</a>
+        <a href="https://eightx.co/blog/average-subscription-churn-rate-by-category" target="_blank" class="text-muted hover:text-lime">→ Eightx · Churn benchmarks</a>
+        <a href="https://bask.health/blog/hims-and-hers-telehealth" target="_blank" class="text-muted hover:text-lime">→ Bask Health · Hims & Hers</a>
+        <a href="https://www.gentech.com.ar/blog/entrena-duro-con-gentech-2/mejores-proteinas-whey-argentina-2026-148" target="_blank" class="text-muted hover:text-lime">→ Gentech · Whey AR 2026</a>
+        <a href="https://www.morashop.ar/suplementos/creatina-energia-y-potenciadores/creatina/" target="_blank" class="text-muted hover:text-lime">→ Morashop · Creatinas</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== INTEGRATIONS / APIS ===================== -->
+<section class="page" id="page-integrations">
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-12">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="chip chip-lime">arquitectura técnica</span>
+      <span class="chip chip-mut">stack recomendado · AR 2026</span>
+    </div>
+    <h1 class="display text-4xl lg:text-6xl font-bold tracking-tight leading-[0.95] max-w-3xl">El stack para que<br/><span class="text-lime">esto funcione en AR.</span></h1>
+    <p class="text-muted mt-4 max-w-2xl">No hay un Stripe para suscripciones en Argentina. Hay que combinar rieles. Este es el mapa exacto.</p>
+
+    <!-- Architecture diagram -->
+    <div class="bg-bg2 border border-line rounded-3xl p-6 lg:p-8 mt-10 relative overflow-hidden">
+      <div class="absolute inset-0 grain opacity-30 pointer-events-none"></div>
+      <h2 class="display text-2xl font-semibold mb-6">Arquitectura recomendada</h2>
+
+      <div class="relative">
+        <!-- top: client -->
+        <div class="flex justify-center mb-6">
+          <div class="bg-bg border-2 border-lime rounded-2xl px-6 py-3 text-center max-w-md w-full">
+            <div class="text-[10px] text-muted uppercase tracking-wider">Cliente</div>
+            <div class="display font-semibold">Next.js Web + Expo (iOS/Android)</div>
+          </div>
+        </div>
+
+        <div class="flex justify-center mb-6">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+        </div>
+
+        <!-- middle: API + DB -->
+        <div class="grid grid-cols-2 gap-4 mb-6 max-w-2xl mx-auto">
+          <div class="bg-bg border border-line rounded-2xl p-4 text-center">
+            <div class="text-[10px] text-muted uppercase tracking-wider">API Layer</div>
+            <div class="display font-semibold mt-1">Hono / Next routes</div>
+            <div class="text-muted text-xs mt-1">Vercel Edge + Cron</div>
+          </div>
+          <div class="bg-bg border border-line rounded-2xl p-4 text-center">
+            <div class="text-[10px] text-muted uppercase tracking-wider">Base de datos</div>
+            <div class="display font-semibold mt-1">Postgres · Neon</div>
+            <div class="text-muted text-xs mt-1">o Supabase</div>
+          </div>
+        </div>
+
+        <div class="flex justify-center mb-6">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#8A8F85" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+
+        <!-- 4 service columns -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div class="bg-bg border border-line rounded-2xl p-4 border-t-4 border-t-lime">
+            <div class="text-[10px] text-lime uppercase tracking-wider font-semibold mb-2">Pagos</div>
+            <div class="space-y-2 text-xs">
+              <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-lime"></span> MercadoPago Preapproval</div>
+              <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-muted"></span> Payway CBU (backup)</div>
+              <div class="flex items-center gap-2 text-muted"><span class="w-1.5 h-1.5 rounded-full bg-muted"></span> Rebill (switch ready)</div>
+            </div>
+          </div>
+          <div class="bg-bg border border-line rounded-2xl p-4 border-t-4 border-t-lime">
+            <div class="text-[10px] text-lime uppercase tracking-wider font-semibold mb-2">Logística</div>
+            <div class="space-y-2 text-xs">
+              <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-lime"></span> Andreani API</div>
+              <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-muted"></span> Uber Direct CABA</div>
+              <div class="flex items-center gap-2 text-muted"><span class="w-1.5 h-1.5 rounded-full bg-muted"></span> Correo Arg. interior</div>
+            </div>
+          </div>
+          <div class="bg-bg border border-line rounded-2xl p-4 border-t-4 border-t-lime">
+            <div class="text-[10px] text-lime uppercase tracking-wider font-semibold mb-2">Notificaciones</div>
+            <div class="space-y-2 text-xs">
+              <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-lime"></span> WhatsApp · Wati</div>
+              <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-lime"></span> Email · Postmark</div>
+              <div class="flex items-center gap-2 text-muted"><span class="w-1.5 h-1.5 rounded-full bg-muted"></span> Push · Expo</div>
+            </div>
+          </div>
+          <div class="bg-bg border border-line rounded-2xl p-4 border-t-4 border-t-lime">
+            <div class="text-[10px] text-lime uppercase tracking-wider font-semibold mb-2">Operaciones</div>
+            <div class="space-y-2 text-xs">
+              <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-lime"></span> WMS · Odoo Community</div>
+              <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-lime"></span> AFIP · TusFacturas</div>
+              <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-lime"></span> Soporte · Crisp</div>
+              <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-lime"></span> Analytics · PostHog</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment providers -->
+    <div class="mt-10">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="display text-2xl font-semibold">Pagos · proveedores evaluados</h2>
+        <span class="chip chip-mut text-[10px]">cuello de botella real del modelo</span>
+      </div>
+      <div class="bg-bg2 border border-line rounded-3xl overflow-hidden">
+        <table class="table w-full">
+          <thead><tr><th>Proveedor</th><th>Recurrente</th><th>Comisión</th><th>Métodos</th><th>Stack</th></tr></thead>
+          <tbody>
+            <tr style="background:rgba(199,255,61,0.04)">
+              <td><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-lime"></span><span class="font-semibold">MercadoPago Preapproval</span></div></td>
+              <td><span class="chip chip-lime text-[10px]">sí · nativo</span></td>
+              <td class="num">4.99–6.29% + IVA</td>
+              <td>Crédito · débito · wallet</td>
+              <td><span class="chip chip-lime text-[10px]">primario</span></td>
+            </tr>
+            <tr>
+              <td><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#9EC0FF]"></span><span class="font-semibold">Payway / Decidir</span></div></td>
+              <td><span class="chip chip-lime text-[10px]">sí · CBU</span></td>
+              <td class="num">~2.5–3.5%</td>
+              <td>Visa/Master · débito CBU</td>
+              <td><span class="chip text-[10px] bg-[#9EC0FF]/10 text-[#9EC0FF] border border-[#9EC0FF]/30">backup CBU</span></td>
+            </tr>
+            <tr>
+              <td><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-muted"></span>Ualá Bis</div></td>
+              <td>Token, no plan-based</td>
+              <td class="num">4.4% / 2.9% / 0.6% QR</td>
+              <td>Tarjetas · transferencia · QR</td>
+              <td><span class="chip chip-mut text-[10px]">evaluar</span></td>
+            </tr>
+            <tr>
+              <td><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-muted"></span>MODO</div></td>
+              <td>No nativo</td>
+              <td class="num">~1.5–2%</td>
+              <td>Bancos · QR</td>
+              <td><span class="chip chip-mut text-[10px]">checkout only</span></td>
+            </tr>
+            <tr>
+              <td><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-muted"></span>SIRO (Banco Roela)</div></td>
+              <td><span class="chip chip-lime text-[10px]">sí</span></td>
+              <td class="num">negociado</td>
+              <td>DEBIN · CBU · Rapipago · TC</td>
+              <td><span class="chip chip-mut text-[10px]">enterprise switch</span></td>
+            </tr>
+            <tr>
+              <td><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-ember"></span>Stripe</div></td>
+              <td>—</td>
+              <td>—</td>
+              <td>—</td>
+              <td><span class="chip text-[10px] bg-ember/10 text-ember border border-ember/30">no disponible AR</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted text-xs mt-3">Recomendación: <span class="text-lime">MercadoPago Preapproval primario + Payway CBU para reducir churn por tarjeta vencida (mes 3+)</span>. Stripe / Chargebee / Recurly: no usar.</p>
+    </div>
+
+    <!-- Logistics providers -->
+    <div class="mt-10">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="display text-2xl font-semibold">Logística · 80% del costo variable</h2>
+        <span class="chip chip-mut text-[10px]">tarifa promedio NubeCommerce: AR$ 7.891</span>
+      </div>
+      <div class="bg-bg2 border border-line rounded-3xl overflow-hidden">
+        <table class="table w-full">
+          <thead><tr><th>Carrier</th><th>API</th><th>Cobertura</th><th>Costo CABA &lt;1kg</th><th>Uso</th></tr></thead>
+          <tbody>
+            <tr style="background:rgba(199,255,61,0.04)">
+              <td><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-lime"></span><span class="font-semibold">Andreani</span></div></td>
+              <td>REST madura</td>
+              <td>Nacional · +900 sucursales</td>
+              <td class="num">AR$ 3.500–6.000</td>
+              <td><span class="chip chip-lime text-[10px]">estándar nacional</span></td>
+            </tr>
+            <tr>
+              <td><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#9EC0FF]"></span><span class="font-semibold">Uber Direct / Envíos</span></div></td>
+              <td>API B2B</td>
+              <td>CABA · AMBA</td>
+              <td class="num">AR$ 3.000–6.000</td>
+              <td><span class="chip text-[10px] bg-[#9EC0FF]/10 text-[#9EC0FF] border border-[#9EC0FF]/30">express CABA</span></td>
+            </tr>
+            <tr>
+              <td><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#9EC0FF]"></span>PedidosYa Envíos</div></td>
+              <td>API B2B</td>
+              <td>+70 ciudades</td>
+              <td class="num">AR$ 2.500–5.000</td>
+              <td><span class="chip text-[10px] bg-[#9EC0FF]/10 text-[#9EC0FF] border border-[#9EC0FF]/30">express alt</span></td>
+            </tr>
+            <tr>
+              <td><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-muted"></span>OCA e-Pak</div></td>
+              <td>REST/SOAP</td>
+              <td>Nacional</td>
+              <td class="num">AR$ 3.000–5.500</td>
+              <td><span class="chip chip-mut text-[10px]">backup</span></td>
+            </tr>
+            <tr>
+              <td><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-muted"></span>Correo Argentino</div></td>
+              <td>REST · PAQ.AR</td>
+              <td>+3.000 puntos · interior</td>
+              <td class="num">AR$ 2.500–4.500</td>
+              <td><span class="chip chip-mut text-[10px]">interior profundo</span></td>
+            </tr>
+            <tr>
+              <td><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-ember"></span>Mercado Envíos Flex</div></td>
+              <td>API restringida</td>
+              <td>CABA/GBA same-day</td>
+              <td class="num">—</td>
+              <td><span class="chip text-[10px] bg-ember/10 text-ember border border-ember/30">solo sellers ML</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted text-xs mt-3">Negociar tarifa corporativa Andreani al pasar 500 envíos/mes (descuento 15–25%). Bajar envío a sucursal para reducir costo logística <span class="text-lime">~33%</span>.</p>
+    </div>
+
+    <!-- Other integrations -->
+    <div class="grid lg:grid-cols-2 gap-4 mt-10">
+      <div class="bg-bg2 border border-line rounded-3xl p-6">
+        <h3 class="display text-xl font-semibold mb-4">Comunicación con el cliente</h3>
+        <div class="space-y-3 text-sm">
+          <div class="flex items-center justify-between p-3 bg-bg border border-line rounded-xl">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-[#25D366]/10 flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366"><path d="M17.5 14.4l-2.3-.7c-.3-.1-.7 0-.9.3l-.8.9c-.2.2-.5.3-.7.2-1.2-.5-2.2-1.2-3-2.1-.2-.2-.2-.5-.1-.7l.5-.9c.2-.3.2-.7 0-1l-1-2c-.2-.4-.6-.6-1-.6h-.9c-.4 0-.8.2-1.1.5-1.5 1.7-1 4.4 1.4 6.9 2.5 2.5 5.2 3 6.9 1.5.3-.3.5-.7.5-1.1v-1c0-.4-.2-.8-.5-1.2zM12 2C6.5 2 2 6.5 2 12c0 1.7.4 3.4 1.3 4.9L2 22l5.3-1.3c1.4.8 3 1.3 4.7 1.3 5.5 0 10-4.5 10-10S17.5 2 12 2z"/></svg></div>
+              <div><div class="font-semibold">WhatsApp Business</div><div class="text-muted text-xs">Wati · plantillas + automation</div></div>
+            </div>
+            <span class="chip chip-lime text-[10px]">primario</span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-bg border border-line rounded-xl">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-[#FFB545]/10 flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFB545" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg></div>
+              <div><div class="font-semibold">Email transaccional</div><div class="text-muted text-xs">Postmark · deliverability AR superior</div></div>
+            </div>
+            <span class="chip chip-lime text-[10px]">primario</span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-bg border border-line rounded-xl">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-[#9EC0FF]/10 flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9EC0FF" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+              <div><div class="font-semibold">Push notifications</div><div class="text-muted text-xs">Expo (iOS+Android nativo)</div></div>
+            </div>
+            <span class="chip chip-mut text-[10px]">app phase</span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-bg border border-line rounded-xl">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-[#C7FF3D]/10 flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+              <div><div class="font-semibold">Soporte</div><div class="text-muted text-xs">Crisp · IG + WhatsApp en bandeja</div></div>
+            </div>
+            <span class="chip chip-lime text-[10px]">€45/mes</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-bg2 border border-line rounded-3xl p-6">
+        <h3 class="display text-xl font-semibold mb-4">Inventario, billing, analytics</h3>
+        <div class="space-y-3 text-sm">
+          <div class="flex items-center justify-between p-3 bg-bg border border-line rounded-xl">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-lime/10 flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><path d="M3 7v13h18V7"/><path d="M3 7l3-4h12l3 4"/><path d="M10 12h4"/></svg></div>
+              <div><div class="font-semibold">Inventario · Odoo Community</div><div class="text-muted text-xs">FIFO · picking · self-hosted</div></div>
+            </div>
+            <span class="chip chip-lime text-[10px]">$0/mes</span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-bg border border-line rounded-xl">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-lime/10 flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+              <div><div class="font-semibold">Facturación AFIP</div><div class="text-muted text-xs">TusFacturas o WSFE directo</div></div>
+            </div>
+            <span class="chip chip-lime text-[10px]">$30/mes</span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-bg border border-line rounded-xl">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-lime/10 flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+              <div><div class="font-semibold">Product analytics</div><div class="text-muted text-xs">PostHog · 1M eventos/mes free</div></div>
+            </div>
+            <span class="chip chip-lime text-[10px]">$0/mes</span>
+          </div>
+          <div class="flex items-center justify-between p-3 bg-bg border border-line rounded-xl">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-lime/10 flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+              <div><div class="font-semibold">Hosting</div><div class="text-muted text-xs">Vercel Pro + Neon Scale Postgres</div></div>
+            </div>
+            <span class="chip chip-lime text-[10px]">$45/mes</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Costs -->
+    <div class="bg-bg2 border border-line rounded-3xl p-6 lg:p-8 mt-10">
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-6">
+        <div>
+          <h2 class="display text-2xl font-semibold">Costos operativos · 1.000 suscriptores activos</h2>
+          <p class="text-muted text-sm">Box mensual AR$ 25k (~USD 25) · 85% MercadoPago / 15% Payway CBU</p>
+        </div>
+        <div class="text-right">
+          <div class="text-[10px] text-muted uppercase tracking-wider">Total operativo</div>
+          <div class="display text-4xl font-bold num text-lime">US$ 7.510<span class="text-muted text-base font-normal">/mes</span></div>
+        </div>
+      </div>
+
+      <div class="grid lg:grid-cols-12 gap-3">
+        <div class="lg:col-span-8">
+          <canvas id="cost-chart" height="240"></canvas>
+        </div>
+        <div class="lg:col-span-4 space-y-2 text-sm">
+          <div class="flex justify-between"><span class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm bg-lime"></span> Logística (Andreani)</span><span class="num font-semibold">US$ 6.000</span></div>
+          <div class="flex justify-between"><span class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm bg-[#A6E512]"></span> MP Preapproval (4–5%)</span><span class="num font-semibold">US$ 1.060</span></div>
+          <div class="flex justify-between"><span class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm bg-[#9EC0FF]"></span> Payway CBU (2.8%)</span><span class="num font-semibold">US$ 105</span></div>
+          <div class="flex justify-between"><span class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm bg-[#FFD245]"></span> Hosting (Vercel + Neon)</span><span class="num font-semibold">US$ 80</span></div>
+          <div class="flex justify-between"><span class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm bg-[#C8A2FF]"></span> WhatsApp (Wati)</span><span class="num font-semibold">US$ 75</span></div>
+          <div class="flex justify-between"><span class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm bg-ember"></span> Soporte (Crisp)</span><span class="num font-semibold">US$ 50</span></div>
+          <div class="flex justify-between"><span class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm bg-[#FF7AC8]"></span> Email (Postmark)</span><span class="num font-semibold">US$ 45</span></div>
+          <div class="flex justify-between"><span class="flex items-center gap-2"><span class="w-3 h-3 rounded-sm bg-muted"></span> Odoo + AFIP + otros</span><span class="num font-semibold">US$ 95</span></div>
+          <div class="hr my-2"></div>
+          <div class="flex justify-between text-base"><span class="font-semibold">Total</span><span class="num font-bold text-lime">US$ 7.510</span></div>
+          <div class="text-[10px] text-muted">no incluye COGS, packaging, marketing ni payroll</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 mt-6">
+        <div class="bg-bg border border-line rounded-xl p-4">
+          <div class="text-[10px] text-muted uppercase tracking-wider">Costo por suscriptor</div>
+          <div class="display text-2xl font-bold num">US$ 7.5</div>
+        </div>
+        <div class="bg-bg border border-line rounded-xl p-4">
+          <div class="text-[10px] text-muted uppercase tracking-wider">Logística % de costo</div>
+          <div class="display text-2xl font-bold num text-ember">80%</div>
+        </div>
+        <div class="bg-bg border border-line rounded-xl p-4">
+          <div class="text-[10px] text-muted uppercase tracking-wider">Margen contribución target</div>
+          <div class="display text-2xl font-bold num text-lime">≥ 60%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- recommendations -->
+    <div class="bg-bg2 border border-line rounded-3xl p-6 lg:p-8 mt-4">
+      <h2 class="display text-2xl font-semibold mb-5">Recomendaciones finales</h2>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="flex gap-3"><div class="num text-2xl text-lime font-bold leading-none">1</div><div><div class="font-semibold mb-1">MVP simple</div><div class="text-muted text-sm">MP Preapproval + Andreani API + Wati + Postmark + PostHog. Saltarse Chargebee y VTEX.</div></div></div>
+        <div class="flex gap-3"><div class="num text-2xl text-lime font-bold leading-none">2</div><div><div class="font-semibold mb-1">Débito CBU mes 3+</div><div class="text-muted text-sm">Activar Payway → reduce churn por tarjeta vencida en 10–15 pts.</div></div></div>
+        <div class="flex gap-3"><div class="num text-2xl text-lime font-bold leading-none">3</div><div><div class="font-semibold mb-1">No checkout custom</div><div class="text-muted text-sm">Usar Checkout Pro de MP para evitar PCI/DSS y reducir fricción.</div></div></div>
+        <div class="flex gap-3"><div class="num text-2xl text-lime font-bold leading-none">4</div><div><div class="font-semibold mb-1">AFIP desde día 1</div><div class="text-muted text-sm">Integrar TusFacturas o WSFE — error frecuente subestimarlo.</div></div></div>
+        <div class="flex gap-3"><div class="num text-2xl text-lime font-bold leading-none">5</div><div><div class="font-semibold mb-1">Reserva técnica</div><div class="text-muted text-sm">Tener switch listo a Rebill o SIRO si MP cambia tarifa.</div></div></div>
+        <div class="flex gap-3"><div class="num text-2xl text-lime font-bold leading-none">6</div><div><div class="font-semibold mb-1">3PL desde 1.500 envíos/mes</div><div class="text-muted text-sm">Migrar a Andreani Fulfillment o iFlow cuando escale operación.</div></div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- toast -->
+<div id="toast" class="bg-bg2 border border-lime/40 text-sm px-5 py-3 rounded-full glow flex items-center gap-2">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toast-text">Listo.</span>
+</div>
+
+<!-- ===================== DATA + LOGIC ===================== -->
+<script>
+/* ================== DATA ================== */
+const PRODUCTS = [
+  // id, name, category, brand, size (display), pack_unit, pack_amount, default_dose, dose_unit, price, image_class, sku_label, popularity
+  { id:'p1',  name:'Creatina Monohidrato',         category:'Performance',  brand:'ENA Sport',         size:'300 g',       pack_unit:'g',    pack_amount:300,  default_dose:5,   dose_unit:'g',    price:18900, blob:'blob-creatina', label:'CR',  pop:98 },
+  { id:'p2',  name:'Whey Protein Vainilla',        category:'Performance',  brand:'Star Nutrition',    size:'1 kg',        pack_unit:'g',    pack_amount:1000, default_dose:30,  dose_unit:'g',    price:32400, blob:'blob-whey',     label:'WH',  pop:96 },
+  { id:'p3',  name:'Omega-3 EPA/DHA 1000',         category:'Salud',        brand:'Mervick',           size:'90 caps',     pack_unit:'caps', pack_amount:90,   default_dose:2,   dose_unit:'caps', price:14500, blob:'blob-omega',    label:'O3',  pop:88 },
+  { id:'p4',  name:'Pre-Workout C4 Original',      category:'Pre-workout',  brand:'Cellucor',          size:'195 g',       pack_unit:'g',    pack_amount:195,  default_dose:6.5, dose_unit:'g',    price:24900, blob:'blob-pre',      label:'PW',  pop:78 },
+  { id:'p5',  name:'Multivitamínico Hombre',       category:'Salud',        brand:'Universal',         size:'90 caps',     pack_unit:'caps', pack_amount:90,   default_dose:1,   dose_unit:'cap',  price:12900, blob:'blob-vit',      label:'MV',  pop:72 },
+  { id:'p6',  name:'Magnesio Citrato',             category:'Recuperación', brand:'Mervick',           size:'120 caps',    pack_unit:'caps', pack_amount:120,  default_dose:2,   dose_unit:'caps', price:9900,  blob:'blob-mag',      label:'MG',  pop:64 },
+  { id:'p7',  name:'Ashwagandha KSM-66',           category:'Salud',        brand:'Birdman',           size:'60 caps',     pack_unit:'caps', pack_amount:60,   default_dose:2,   dose_unit:'caps', price:14900, blob:'blob-ash',      label:'AS',  pop:58 },
+  { id:'p8',  name:'Colágeno Hidrolizado',         category:'Recuperación', brand:'ENA Sport',         size:'400 g',       pack_unit:'g',    pack_amount:400,  default_dose:10,  dose_unit:'g',    price:16900, blob:'blob-coll',     label:'CO',  pop:60 },
+  { id:'p9',  name:'BCAA 2:1:1',                   category:'Recuperación', brand:'Universal',         size:'500 g',       pack_unit:'g',    pack_amount:500,  default_dose:10,  dose_unit:'g',    price:19900, blob:'blob-mag',      label:'BC',  pop:50 },
+  { id:'p10', name:'Glutamina Pura',               category:'Recuperación', brand:'Star Nutrition',    size:'300 g',       pack_unit:'g',    pack_amount:300,  default_dose:5,   dose_unit:'g',    price:15400, blob:'blob-creatina', label:'GL',  pop:46 },
+  { id:'p11', name:'Beta-Alanina',                 category:'Performance',  brand:'ENA Sport',         size:'200 g',       pack_unit:'g',    pack_amount:200,  default_dose:4,   dose_unit:'g',    price:13900, blob:'blob-pre',      label:'BA',  pop:42 },
+  { id:'p12', name:'Vitamina D3 5000IU',           category:'Salud',        brand:'Mervick',           size:'100 caps',    pack_unit:'caps', pack_amount:100,  default_dose:1,   dose_unit:'cap',  price:8900,  blob:'blob-vit',      label:'D3',  pop:55 },
+  { id:'p13', name:'ZMA',                          category:'Recuperación', brand:'Optimum',           size:'90 caps',     pack_unit:'caps', pack_amount:90,   default_dose:3,   dose_unit:'caps', price:13400, blob:'blob-mag',      label:'ZM',  pop:36 },
+  { id:'p14', name:'L-Carnitina Líquida',          category:'Performance',  brand:'Gentech',           size:'480 ml',      pack_unit:'ml',   pack_amount:480,  default_dose:15,  dose_unit:'ml',   price:11900, blob:'blob-whey',     label:'LC',  pop:48 },
+  { id:'p15', name:'Caseína Nocturna',             category:'Performance',  brand:'Star Nutrition',    size:'900 g',       pack_unit:'g',    pack_amount:900,  default_dose:30,  dose_unit:'g',    price:36900, blob:'blob-whey',     label:'CA',  pop:38 },
+  { id:'p16', name:'Pre-Workout Stim-Free',        category:'Pre-workout',  brand:'Birdman',           size:'225 g',       pack_unit:'g',    pack_amount:225,  default_dose:7.5, dose_unit:'g',    price:22900, blob:'blob-pre',      label:'PS',  pop:30 },
+  { id:'p17', name:'Whey Isolate Chocolate',       category:'Performance',  brand:'Optimum',           size:'907 g',       pack_unit:'g',    pack_amount:907,  default_dose:30,  dose_unit:'g',    price:47900, blob:'blob-whey',     label:'WI',  pop:54 },
+  { id:'p18', name:'Probiótico 50B',               category:'Salud',        brand:'Birdman',           size:'30 caps',     pack_unit:'caps', pack_amount:30,   default_dose:1,   dose_unit:'cap',  price:18900, blob:'blob-coll',     label:'PB',  pop:28 },
+];
+
+const BRANDS = ['ENA Sport','Star Nutrition','Mervick','Universal','Cellucor','Birdman','Gentech','Optimum'];
+
+/* Subscribers (admin sample) */
+function genUsers(n) {
+  const NAMES = ['Tomás Benitez','Florencia Galvez','Nahuel Ruiz','Sofía Méndez','Juan Gachet','Lucas Iarussi','Camila Solá','Martín Caputo','Agustina Rivero','Federico Lorenzo','Valentina Páez','Joaquín Salerno','Belén Aguirre','Mateo Funes','Antonella Ríos','Bautista Vega','Catalina Bonelli','Ignacio Roldán','Renata Castro','Tomás Aliaga','Julieta Pasini','Bruno Lecca','Magalí Fonseca','Santiago Vidal','Romina Petrik'];
+  const STATUSES = [['active',74],['active',74],['active',74],['paused',12],['risk',8],['canceled',6]];
+  const arr = [];
+  for (let i=0;i<n;i++) {
+    const name = NAMES[i % NAMES.length] + (i >= NAMES.length ? ' '+Math.floor(i/NAMES.length+1) : '');
+    const r = Math.random()*100;
+    let acc = 0, status='active';
+    for (const [s,w] of STATUSES) { acc += w; if (r <= acc) { status = s; break; } }
+    const skus = 1 + Math.floor(Math.random()*5);
+    const mrr = [18900,32400,47890,62900,89500][Math.min(skus-1, 4)] + Math.floor(Math.random()*5000-2500);
+    const days = Math.floor(Math.random()*28);
+    const tenure = Math.floor(Math.random()*14)+1;
+    arr.push({ id:'u'+(1000+i), name, email:name.toLowerCase().replace(/\s/g,'.').replace(/[áéíóú]/g, m=>({á:'a',é:'e',í:'i',ó:'o',ú:'u'}[m]))+'@mail.com', plan:['Starter','Stack','Stack','Atleta'][Math.min(skus-1,3)], skus, mrr, next:days, tenure, status });
+  }
+  return arr;
+}
+const USERS = genUsers(120);
+
+/* Shipments today + tomorrow */
+const CARRIERS = ['Andreani','OCA','Andreani Express'];
+const ZONES = ['CABA · Palermo','CABA · Belgrano','GBA Norte','GBA Sur','La Plata','Córdoba','Mendoza','Rosario'];
+function genShipments() {
+  const list = [];
+  for (let i=0;i<60;i++) {
+    const u = USERS[i % USERS.length];
+    list.push({
+      id: 'FS-2026-'+(5120+i),
+      user: u.name,
+      items: 1 + Math.floor(Math.random()*3),
+      itemsLabel: ['Creatina 300g','Whey 1kg + Omega','Whey + Multivit','Magnesio + Vit D','Whey + BCAA','Creatina + Beta-Alanina','Pre-Workout C4','Stack completo (5)','Colágeno + Magnesio'][i%9],
+      carrier: CARRIERS[i % CARRIERS.length],
+      zone: ZONES[i % ZONES.length],
+      etd: ['09:30','10:15','11:00','12:30','14:00','15:45','16:30','17:15'][i%8],
+      status: ['preparing','picked','shipping','shipping','preparing'][i%5]
+    });
+  }
+  return list;
+}
+const SHIPMENTS = genShipments();
+
+/* Inventory */
+const INVENTORY = PRODUCTS.map((p,i) => {
+  const stock = Math.floor(50 + Math.random()*800);
+  const reserved = Math.floor(stock * (0.1 + Math.random()*0.3));
+  const dailyBurn = Math.max(1, Math.floor(stock/30));
+  const cobertura = Math.floor((stock-reserved)/dailyBurn);
+  return { sku:'SKU-'+(2100+i), product:p.name, brand:p.brand, stock, reserved, available:stock-reserved, cobertura, status: cobertura < 15 ? 'low' : cobertura > 60 ? 'over' : 'ok' };
+});
+
+/* Logistics calendar: 35-day window */
+function genCalendar() {
+  const days = [];
+  // Start from May 1 2026
+  const start = new Date(2026, 4, 1); // month is 0-indexed; April=3
+  // Find Monday before start
+  const dow = (start.getDay() + 6) % 7;
+  const firstCell = new Date(start);
+  firstCell.setDate(start.getDate() - dow);
+  const TODAY = new Date(2026, 4, 13);
+  for (let i=0;i<35;i++) {
+    const d = new Date(firstCell);
+    d.setDate(firstCell.getDate() + i);
+    const inMonth = d.getMonth() === 4;
+    const dayWeight = (d.getDay()===0 || d.getDay()===6) ? 0.2 : 1; // weekends fewer
+    const shipments = inMonth ? Math.floor((80 + Math.random()*120) * dayWeight) : 0;
+    const peak = shipments > 150;
+    days.push({ date:d, day:d.getDate(), inMonth, shipments, peak, today: d.getTime()===TODAY.getTime() });
+  }
+  return days;
+}
+
+/* =================== ROUTING =================== */
+function nav(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('active', a.dataset.nav === name));
+  window.scrollTo({ top:0, behavior:'smooth' });
+  if (name === 'admin') renderAdmin();
+  if (name === 'shop') renderShop();
+  if (name === 'builder') renderBuilder();
+  if (name === 'account') renderAccount();
+  if (name === 'market') renderMarket();
+  if (name === 'integrations') renderIntegrations();
+}
+
+/* =================== MARKET RESEARCH =================== */
+function renderMarket() {
+  // Market projection bar chart
+  destroyChart('m-market');
+  const ctxM = document.getElementById('m-market').getContext('2d');
+  CHARTS['m-market'] = new Chart(ctxM, {
+    type:'bar',
+    data: {
+      labels:['2025','2026','2027','2028','2029','2030'],
+      datasets:[{
+        label:'USD M',
+        data:[25.82, 27.97, 30.30, 32.83, 35.55, 38.52],
+        backgroundColor:['#22251f','#3c4133','#5e6649','#869464','#a8c074','#C7FF3D'],
+        borderRadius:8,
+        borderWidth:0
+      }]
+    },
+    options: {
+      plugins:{legend:{display:false}, tooltip:{ callbacks:{ label: c => 'US$ '+c.parsed.y+'M' }}},
+      scales: {
+        x:{grid:{color:'#22251f44'}, ticks:{color:'#8A8F85', font:{family:'JetBrains Mono'}}},
+        y:{grid:{color:'#22251f44'}, ticks:{color:'#8A8F85', font:{family:'JetBrains Mono'}, callback: v => 'US$'+v+'M'}}
+      }
+    }
+  });
+
+  // Channel distribution doughnut
+  destroyChart('m-channel');
+  const ctxCh = document.getElementById('m-channel').getContext('2d');
+  CHARTS['m-channel'] = new Chart(ctxCh, {
+    type:'doughnut',
+    data: {
+      labels:['Supermercados/hipermercados','Especializadas','Online (creciendo +10.18%)','Farmacias','Gimnasios'],
+      datasets:[{ data:[42.71, 24.5, 15.8, 10.2, 6.79], backgroundColor:['#22251f','#3c4133','#C7FF3D','#9EC0FF','#FF7A45'], borderColor:'#0A0B0A', borderWidth:3, hoverOffset:6 }]
+    },
+    options: { plugins:{legend:{position:'bottom', labels:{color:'#E8EAE3', boxWidth:10, font:{size:10}}}}, cutout:'62%' }
+  });
+
+  // LATAM line chart
+  destroyChart('m-latam');
+  const ctxL = document.getElementById('m-latam').getContext('2d');
+  const grad = ctxL.createLinearGradient(0,0,0,220);
+  grad.addColorStop(0,'rgba(199,255,61,0.4)'); grad.addColorStop(1,'rgba(199,255,61,0)');
+  CHARTS['m-latam'] = new Chart(ctxL, {
+    type:'line',
+    data: {
+      labels:['2025','2027','2029','2031','2033','2035'],
+      datasets:[{
+        label:'USD B',
+        data:[2.24, 2.86, 3.65, 4.66, 5.93, 7.43],
+        borderColor:'#C7FF3D',
+        backgroundColor:grad,
+        tension:0.35, fill:true, borderWidth:2.5,
+        pointRadius:4, pointBackgroundColor:'#C7FF3D', pointBorderColor:'#0A0B0A', pointBorderWidth:2
+      }]
+    },
+    options: {
+      plugins:{legend:{display:false}, tooltip:{ callbacks:{ label: c => 'US$ '+c.parsed.y+' B' }}},
+      scales: {
+        x:{grid:{color:'#22251f44'}, ticks:{color:'#8A8F85', font:{family:'JetBrains Mono'}}},
+        y:{grid:{color:'#22251f44'}, ticks:{color:'#8A8F85', font:{family:'JetBrains Mono'}, callback: v => 'US$'+v+'B'}}
+      }
+    }
+  });
+
+  // Brand share doughnut
+  destroyChart('m-brands');
+  const ctxB = document.getElementById('m-brands').getContext('2d');
+  CHARTS['m-brands'] = new Chart(ctxB, {
+    type:'doughnut',
+    data: {
+      labels:['ENA Sport','Star Nutrition','Gentech','Mervick','Optimum/Universal','Birdman','Otras'],
+      datasets:[{ data:[22, 18, 14, 10, 16, 8, 12], backgroundColor:['#C7FF3D','#A6E512','#9EC0FF','#22251f','#FF7A45','#FFD245','#3c4133'], borderColor:'#0A0B0A', borderWidth:3, hoverOffset:6 }]
+    },
+    options: { plugins:{legend:{position:'bottom', labels:{color:'#E8EAE3', boxWidth:10, font:{size:10}}}}, cutout:'62%' }
+  });
+
+  // Churn benchmarks bar
+  destroyChart('m-churn');
+  const ctxCh2 = document.getElementById('m-churn').getContext('2d');
+  CHARTS['m-churn'] = new Chart(ctxCh2, {
+    type:'bar',
+    data: {
+      labels:['Café','Suplementos','Coffee','Beauty','Meal kits'],
+      datasets:[
+        { label:'Mensual (%)', data:[5.5, 6.5, 7.5, 11, 12], backgroundColor:'#C7FF3D', borderRadius:6 },
+        { label:'Anual (%)', data:[0.8, 1.0, 1.2, 2.5, 3.0], backgroundColor:'#22251f', borderRadius:6 }
+      ]
+    },
+    options: {
+      plugins:{legend:{position:'bottom', labels:{color:'#E8EAE3', boxWidth:10}}},
+      scales: {
+        x:{grid:{color:'#22251f44'}, ticks:{color:'#8A8F85'}},
+        y:{grid:{color:'#22251f44'}, ticks:{color:'#8A8F85', callback: v => v+'%'}}
+      }
+    }
+  });
+}
+
+/* =================== INTEGRATIONS =================== */
+function renderIntegrations() {
+  destroyChart('cost-chart');
+  const ctx = document.getElementById('cost-chart').getContext('2d');
+  CHARTS['cost-chart'] = new Chart(ctx, {
+    type:'bar',
+    data: {
+      labels:['Logística','MP Preapproval','Payway CBU','Hosting','WhatsApp','Soporte','Email','Otros'],
+      datasets:[{
+        label:'USD/mes',
+        data:[6000, 1060, 105, 80, 75, 50, 45, 95],
+        backgroundColor:['#C7FF3D','#A6E512','#9EC0FF','#FFD245','#C8A2FF','#FF7A45','#FF7AC8','#22251f'],
+        borderRadius:8
+      }]
+    },
+    options: {
+      indexAxis:'y',
+      plugins:{legend:{display:false}, tooltip:{ callbacks:{ label: c => 'US$ '+c.parsed.x.toLocaleString() }}},
+      scales: {
+        x:{grid:{color:'#22251f44'}, ticks:{color:'#8A8F85', font:{family:'JetBrains Mono'}, callback: v => 'US$'+(v/1000).toFixed(1)+'k'}},
+        y:{grid:{display:false}, ticks:{color:'#E8EAE3'}}
+      }
+    }
+  });
+}
+
+/* =================== SHOP =================== */
+function priceFmt(n) { return '$ ' + n.toLocaleString('es-AR'); }
+
+function productCard(p, ctx='shop') {
+  return `
+    <div class="product-card">
+      <div class="product-thumb ${p.blob}">
+        <svg viewBox="0 0 40 60" class="bottle">
+          <rect class="cap" x="13" y="2" width="14" height="6" rx="2"/>
+          <rect class="body" x="8" y="8" width="24" height="48" rx="4"/>
+          <rect class="label" x="9" y="22" width="22" height="20"/>
+          <text class="label-text" x="20" y="35" text-anchor="middle">${p.label}</text>
+        </svg>
+        <span class="chip chip-mut absolute top-3 left-3 text-[10px]">${p.brand}</span>
+        ${p.pop > 90 ? '<span class="chip chip-lime absolute top-3 right-3 text-[10px]">top</span>' : ''}
+      </div>
+      <div class="p-4">
+        <div class="text-xs text-muted uppercase tracking-wider">${p.category}</div>
+        <h4 class="font-semibold text-[15px] mt-1 mb-2 leading-tight">${p.name}</h4>
+        <div class="flex items-center justify-between mb-3">
+          <div class="text-muted text-xs num">${p.size} · ${p.default_dose}${p.dose_unit}/día</div>
+        </div>
+        <div class="flex items-end justify-between">
+          <div>
+            <div class="display text-lg font-bold num">${priceFmt(p.price)}</div>
+            <div class="text-[10px] text-muted">${Math.floor(p.pack_amount/p.default_dose)} días · ${priceFmt(Math.round(p.price/(p.pack_amount/p.default_dose)))}/día</div>
+          </div>
+          <button class="btn-primary text-[12px] py-2 px-3" onclick="addToPlan('${p.id}')">+ Agregar</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderShop() {
+  document.getElementById('shop-grid').innerHTML = PRODUCTS.map(p => productCard(p,'shop')).join('');
+}
+
+/* =================== BUILDER =================== */
+let PLAN = []; // [{pid, dose, brand}]
+
+function ensureDefault(pid) {
+  const p = PRODUCTS.find(x => x.id === pid);
+  return { pid, dose: p.default_dose, brand: p.brand };
+}
+
+function addToPlan(pid) {
+  if (PLAN.find(x => x.pid === pid)) {
+    toast('Ya está en tu plan.');
+    if (!document.getElementById('page-builder').classList.contains('active')) nav('builder');
+    return;
+  }
+  PLAN.push(ensureDefault(pid));
+  toast('Agregado a tu plan.');
+  if (!document.getElementById('page-builder').classList.contains('active')) nav('builder');
+  else renderBuilder();
+}
+
+function removeFromPlan(pid) {
+  PLAN = PLAN.filter(x => x.pid !== pid);
+  renderBuilder();
+}
+
+function setDose(pid, dose) {
+  const it = PLAN.find(x => x.pid === pid);
+  if (it) it.dose = parseFloat(dose);
+  renderBuilder();
+}
+
+function setBrand(pid, brand) {
+  const it = PLAN.find(x => x.pid === pid);
+  if (it) it.brand = brand;
+  renderBuilder();
+}
+
+function daysSupply(item) {
+  const p = PRODUCTS.find(x => x.id === item.pid);
+  const dose = item.dose || p.default_dose;
+  return Math.floor(p.pack_amount / dose);
+}
+
+function renderBuilder() {
+  // catalog
+  const cat = PRODUCTS.map(p => {
+    const inPlan = PLAN.find(x => x.pid === p.id);
+    return `
+      <div class="border ${inPlan?'border-lime/50 bg-lime/[0.03]':'border-line bg-bg'} rounded-2xl p-3 flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl ${p.blob} flex items-center justify-center flex-shrink-0">
+          <svg viewBox="0 0 40 60" class="bottle"><rect class="cap" x="13" y="2" width="14" height="6" rx="2"/><rect class="body" x="8" y="8" width="24" height="48" rx="4"/><rect class="label" x="9" y="22" width="22" height="20"/><text class="label-text" x="20" y="35" text-anchor="middle">${p.label}</text></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-[13px] font-semibold truncate">${p.name}</div>
+          <div class="text-[11px] text-muted truncate">${p.brand} · ${p.size}</div>
+        </div>
+        <div class="text-right flex-shrink-0">
+          <div class="text-sm font-semibold num">${priceFmt(p.price)}</div>
+          ${ inPlan ? `<button class="text-[11px] text-muted mt-1" onclick="removeFromPlan('${p.id}')">Quitar</button>`
+                    : `<button class="text-[11px] text-lime font-semibold mt-1" onclick="addToPlan('${p.id}')">+ Agregar</button>` }
+        </div>
+      </div>
+    `;
+  }).join('');
+  document.getElementById('builder-catalog').innerHTML = cat;
+  document.getElementById('catalog-count').textContent = PRODUCTS.length + ' productos';
+
+  // plan items
+  const wrap = document.getElementById('plan-items');
+  const empty = document.getElementById('plan-empty');
+  if (PLAN.length === 0) {
+    wrap.innerHTML = '';
+    empty.style.display = '';
+  } else {
+    empty.style.display = 'none';
+    wrap.innerHTML = PLAN.map(it => {
+      const p = PRODUCTS.find(x => x.id === it.pid);
+      const ds = daysSupply(it);
+      const otherBrands = BRANDS.filter(b => b !== p.brand).slice(0,4);
+      return `
+        <div class="bg-bg border border-line rounded-2xl p-3">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-lg ${p.blob} flex items-center justify-center flex-shrink-0">
+              <svg viewBox="0 0 40 60" class="bottle"><rect class="cap" x="13" y="2" width="14" height="6" rx="2"/><rect class="body" x="8" y="8" width="24" height="48" rx="4"/><rect class="label" x="9" y="22" width="22" height="20"/><text class="label-text" x="20" y="35" text-anchor="middle">${p.label}</text></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-semibold truncate">${p.name}</div>
+              <div class="text-[11px] text-muted">${p.size} · ${priceFmt(p.price)} · te dura ${ds} días</div>
+            </div>
+            <button class="text-muted hover:text-ember" onclick="removeFromPlan('${p.id}')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <div class="text-[10px] text-muted uppercase tracking-wider mb-1">Dosis diaria</div>
+              <div class="flex items-center gap-2">
+                <input type="range" min="${p.default_dose*0.4}" max="${p.default_dose*2}" step="${p.dose_unit==='caps'||p.dose_unit==='cap'?1:0.5}" value="${it.dose}" oninput="setDose('${p.id}', this.value)" class="flex-1"/>
+                <span class="num text-xs w-14 text-right">${it.dose}${p.dose_unit}</span>
+              </div>
+            </div>
+            <div>
+              <div class="text-[10px] text-muted uppercase tracking-wider mb-1">Marca</div>
+              <select onchange="setBrand('${p.id}', this.value)" class="bg-bg2 border border-line rounded-md px-2 py-1.5 text-xs w-full">
+                <option ${it.brand===p.brand?'selected':''}>${p.brand}</option>
+                ${otherBrands.map(b => `<option ${it.brand===b?'selected':''}>${b}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // totals
+  const subtotal = PLAN.reduce((s,it) => s + PRODUCTS.find(p=>p.id===it.pid).price, 0);
+  const discount = subtotal > 60000 ? Math.round(subtotal * 0.18) : subtotal > 40000 ? Math.round(subtotal*0.12) : 0;
+  const shipping = subtotal > 30000 ? 0 : (subtotal > 0 ? 2900 : 0);
+  const total = subtotal - discount + shipping;
+  document.getElementById('plan-subtotal').textContent = priceFmt(subtotal);
+  document.getElementById('plan-discount').textContent = discount ? '− '+priceFmt(discount) : '$ 0';
+  document.getElementById('plan-shipping').textContent = shipping === 0 ? 'Gratis' : priceFmt(shipping);
+  document.getElementById('plan-total').textContent = priceFmt(total) + ' /mes';
+  document.getElementById('plan-cta-total').textContent = priceFmt(total) + '/mes';
+
+  // shipments preview
+  const ship = document.getElementById('plan-shipments');
+  if (PLAN.length === 0) {
+    ship.innerHTML = '<div class="text-muted text-xs">Agregá un suplemento para ver el cronograma.</div>';
+  } else {
+    const today = new Date(2026, 4, 13);
+    const items = PLAN.map(it => {
+      const p = PRODUCTS.find(x => x.id === it.pid);
+      const ds = Math.max(1, daysSupply(it) - 4); // buffer
+      const next = new Date(today); next.setDate(today.getDate() + (ds % 60 || 5));
+      return { p, ds, next };
+    }).sort((a,b) => a.next - b.next);
+    ship.innerHTML = items.slice(0,4).map(({p,ds,next}) => `
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="w-2 h-2 rounded-full bg-lime flex-shrink-0"></span>
+          <span class="truncate">${p.name}</span>
+        </div>
+        <span class="num text-xs text-muted ml-2">${next.getDate()} ${['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][next.getMonth()]}</span>
+      </div>
+    `).join('');
+  }
+}
+
+function checkoutPlan() {
+  if (PLAN.length === 0) { toast('Agregá al menos un suplemento.'); return; }
+  toast('¡Suscripción activada! Te llevamos a tu cuenta.');
+  setTimeout(() => nav('account'), 800);
+}
+
+/* =================== ACCOUNT =================== */
+function renderAccount() {
+  // active subs (3 default if plan empty)
+  const defaults = ['p1','p2','p3'];
+  const subs = (PLAN.length ? PLAN : defaults.map(pid => ensureDefault(pid)));
+  const dom = document.getElementById('account-subs');
+  dom.innerHTML = subs.map(it => {
+    const p = PRODUCTS.find(x => x.id === it.pid);
+    const ds = daysSupply(it);
+    const remaining = Math.floor(Math.random() * ds * 0.6) + 4;
+    const pct = Math.round((remaining / ds) * 100);
+    const tone = remaining < 10 ? 'ember' : remaining < 20 ? 'lime' : 'muted';
+    return `
+      <div class="bg-bg border border-line rounded-2xl p-4 flex items-center gap-4">
+        <div class="w-14 h-14 rounded-xl ${p.blob} flex items-center justify-center flex-shrink-0">
+          <svg viewBox="0 0 40 60" class="bottle"><rect class="cap" x="13" y="2" width="14" height="6" rx="2"/><rect class="body" x="8" y="8" width="24" height="48" rx="4"/><rect class="label" x="9" y="22" width="22" height="20"/><text class="label-text" x="20" y="35" text-anchor="middle">${p.label}</text></svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-1">
+            <div class="font-semibold">${p.name}</div>
+            <span class="chip chip-mut text-[10px]">${it.brand}</span>
+          </div>
+          <div class="text-xs text-muted">${it.dose}${p.dose_unit}/día · te dura ${ds} días · ${priceFmt(p.price)}/mes</div>
+          <div class="flex items-center gap-2 mt-2">
+            <div class="flex-1 h-1.5 bg-line rounded-full overflow-hidden"><div class="h-full bg-${tone === 'muted' ? '[#8A8F85]' : tone}" style="width:${pct}%"></div></div>
+            <span class="text-xs num text-${tone === 'muted' ? 'muted' : tone}">${remaining} días</span>
+          </div>
+        </div>
+        <button class="text-muted text-xs px-3 py-1.5 border border-line rounded-full hover:text-ink">Editar</button>
+      </div>`;
+  }).join('');
+
+  // deliveries
+  const today = new Date(2026,4,13);
+  const dels = subs.slice(0,4).map((it,i) => {
+    const p = PRODUCTS.find(x => x.id === it.pid);
+    const next = new Date(today); next.setDate(today.getDate() + 9 + i*7);
+    return { p, next };
+  });
+  document.getElementById('account-deliveries').innerHTML = dels.map(({p,next}) => `
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-lg ${p.blob} flex items-center justify-center flex-shrink-0">
+        <svg viewBox="0 0 40 60" class="bottle" style="width:60%;height:60%"><rect class="cap" x="13" y="2" width="14" height="6" rx="2"/><rect class="body" x="8" y="8" width="24" height="48" rx="4"/><rect class="label" x="9" y="22" width="22" height="20"/><text class="label-text" x="20" y="35" text-anchor="middle">${p.label}</text></svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold text-sm truncate">${p.name}</div>
+        <div class="text-xs text-muted num">${next.getDate()} ${['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][next.getMonth()]} · vía Andreani</div>
+      </div>
+    </div>
+  `).join('');
+
+  // dose calendar
+  const cal = document.getElementById('dose-calendar');
+  const start = new Date(2026,4,1);
+  const dow = (start.getDay()+6)%7;
+  let html = '';
+  for (let i=0; i<dow; i++) html += '<div></div>';
+  for (let d=1; d<=31; d++) {
+    const isToday = d === 13;
+    const dosesCount = (d%7===0) ? 0 : subs.length; // off on sundays
+    html += `
+      <div class="cal-cell ${dosesCount>0?'has':''} ${isToday?'today':''}">
+        <div class="num text-xs text-muted">${d}</div>
+        ${dosesCount > 0 ? `<div class="cal-pill">${dosesCount} dosis</div>` : ''}
+        ${d===22 ? `<div class="cal-pill" style="background:#C7FF3D;color:#0A0B0A;">✓ envío</div>` : ''}
+        ${d===28 ? `<div class="cal-pill" style="background:#C7FF3D;color:#0A0B0A;">✓ envío</div>` : ''}
+      </div>`;
+  }
+  cal.innerHTML = html;
+}
+
+/* =================== ADMIN =================== */
+function adminTab(name) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.add('hidden'));
+  document.querySelector(`.admin-tab[data-tab="${name}"]`).classList.remove('hidden');
+  document.querySelectorAll('[data-admin]').forEach(a => a.classList.toggle('active', a.dataset.admin === name));
+  if (name === 'overview') renderOverview();
+  if (name === 'subscribers') renderSubs();
+  if (name === 'logistics') renderLogistics();
+  if (name === 'inventory') renderInventory();
+  if (name === 'products') renderAdminProducts();
+  if (name === 'revenue') renderRevenue();
+  if (name === 'churn') renderChurn();
+}
+
+let CHARTS = {};
+function destroyChart(id) {
+  if (CHARTS[id]) { CHARTS[id].destroy(); CHARTS[id] = null; }
+}
+
+function renderAdmin() { renderOverview(); }
+
+function renderOverview() {
+  // today shipments
+  document.getElementById('today-shipments').innerHTML = SHIPMENTS.slice(0,8).map(s => `
+    <div class="bg-bg border border-line rounded-xl p-3 text-xs">
+      <div class="flex items-center justify-between">
+        <span class="num text-muted">${s.id}</span>
+        <span class="chip chip-mut text-[9px]">${s.carrier.split(' ')[0]}</span>
+      </div>
+      <div class="font-semibold mt-1 truncate">${s.user}</div>
+      <div class="text-muted mt-0.5 truncate">${s.itemsLabel} · ${s.zone}</div>
+    </div>
+  `).join('');
+
+  // top SKUs
+  const topSkus = [...PRODUCTS].sort((a,b)=>b.pop-a.pop).slice(0,5);
+  const max = topSkus[0].pop;
+  document.getElementById('top-skus').innerHTML = topSkus.map((p,i) => `
+    <div>
+      <div class="flex justify-between text-sm mb-1">
+        <span class="flex items-center gap-2"><span class="num text-muted text-xs">${i+1}.</span> ${p.name}</span>
+        <span class="num text-muted text-xs">${Math.floor(p.pop*28)} suscriptos</span>
+      </div>
+      <div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-lime" style="width:${(p.pop/max)*100}%"></div></div>
+    </div>
+  `).join('');
+
+  // revenue chart
+  destroyChart('chart-revenue');
+  const ctx = document.getElementById('chart-revenue').getContext('2d');
+  const grad = ctx.createLinearGradient(0,0,0,200);
+  grad.addColorStop(0,'rgba(199,255,61,0.35)');
+  grad.addColorStop(1,'rgba(199,255,61,0.0)');
+  CHARTS['chart-revenue'] = new Chart(ctx, {
+    type:'line',
+    data: {
+      labels: Array.from({length:30}, (_,i) => i+1+' may'),
+      datasets: [{
+        label:'Ingresos',
+        data: [320,340,360,380,360,300,310, 420,410,460,490,510,500,470, 530,560,590,620,650,610,600, 660,680,700,720,710,690,680, 700,720].map(x=>x*1000),
+        borderColor:'#C7FF3D', borderWidth:2, tension:0.35, fill:true, backgroundColor:grad, pointRadius:0, pointHoverRadius:4, pointBackgroundColor:'#C7FF3D'
+      }]
+    },
+    options: {
+      plugins:{legend:{display:false}},
+      scales: {
+        x: { grid:{color:'#22251f44'}, ticks:{color:'#8A8F85', font:{family:'JetBrains Mono', size:10}}},
+        y: { grid:{color:'#22251f44'}, ticks:{color:'#8A8F85', font:{family:'JetBrains Mono', size:10}, callback: v => '$'+(v/1000)+'k'}}
+      }
+    }
+  });
+
+  // plan mix doughnut
+  destroyChart('chart-mix');
+  const ctx2 = document.getElementById('chart-mix').getContext('2d');
+  CHARTS['chart-mix'] = new Chart(ctx2, {
+    type:'doughnut',
+    data: {
+      labels:['Starter','Stack','Atleta'],
+      datasets:[{ data:[480, 1840, 511], backgroundColor:['#22251f','#C7FF3D','#FF7A45'], borderColor:'#0A0B0A', borderWidth:3, hoverOffset: 6 }]
+    },
+    options: { plugins:{legend:{position:'right', labels:{color:'#E8EAE3', font:{family:'Inter'}}}}, cutout:'68%' }
+  });
+}
+
+function renderSubs() {
+  const tbody = document.getElementById('subs-tbody');
+  tbody.innerHTML = USERS.slice(0,25).map(u => {
+    const dot = u.status==='active'?'bg-lime':u.status==='paused'?'bg-[#FFD245]':u.status==='risk'?'bg-ember':'bg-muted';
+    const lbl = u.status==='active'?'Activo':u.status==='paused'?'Pausado':u.status==='risk'?'En riesgo':'Cancelado';
+    return `
+      <tr>
+        <td>
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-gradient-to-br from-lime to-ember flex-shrink-0"></div>
+            <div>
+              <div class="font-semibold">${u.name}</div>
+              <div class="text-xs text-muted">${u.email}</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="chip chip-mut text-[10px]">${u.plan}</span></td>
+        <td><span class="num">${u.skus}</span></td>
+        <td><span class="num font-semibold">${priceFmt(u.mrr)}</span></td>
+        <td><span class="num text-muted">en ${u.next} días</span></td>
+        <td><span class="num text-muted">${u.tenure} ${u.tenure===1?'mes':'meses'}</span></td>
+        <td><span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full ${dot}"></span> ${lbl}</span></td>
+        <td><button class="text-muted hover:text-lime"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderLogistics() {
+  const cal = document.getElementById('logistics-calendar');
+  const days = genCalendar();
+  cal.innerHTML = days.map(d => {
+    if (!d.inMonth) return `<div class="cal-cell" style="opacity:0.35"><div class="num text-xs text-muted">${d.day}</div></div>`;
+    const cls = d.shipments > 0 ? 'has' : '';
+    const today = d.today ? 'today' : '';
+    return `
+      <div class="cal-cell ${cls} ${today}">
+        <div class="flex items-start justify-between">
+          <span class="num text-xs ${d.today ? 'text-lime font-bold' : 'text-muted'}">${d.day}</span>
+          ${d.peak ? '<span class="w-1.5 h-1.5 rounded-full bg-ember"></span>' : (d.shipments > 0 ? '<span class="w-1.5 h-1.5 rounded-full bg-lime"></span>' : '')}
+        </div>
+        ${d.shipments > 0 ? `<div class="mt-1 num font-semibold text-${d.peak?'ember':'ink'}">${d.shipments}</div><div class="text-[10px] text-muted">paquetes</div>` : ''}
+      </div>`;
+  }).join('');
+
+  const tbody = document.getElementById('logistics-tbody');
+  tbody.innerHTML = SHIPMENTS.slice(0,12).map(s => `
+    <tr>
+      <td><span class="num text-xs">${s.id}</span></td>
+      <td><span class="font-semibold">${s.user}</span></td>
+      <td>${s.itemsLabel} <span class="chip chip-mut text-[9px] ml-1">${s.items} SKUs</span></td>
+      <td>${s.carrier}</td>
+      <td>${s.zone}</td>
+      <td class="num text-muted">hoy · ${s.etd}</td>
+      <td>
+        ${s.status==='preparing'?'<span class="chip chip-mut text-[10px]">preparando</span>':
+          s.status==='picked'?'<span class="chip text-[10px] bg-[#FFD245]/10 text-[#FFD245] border border-[#FFD245]/30">empaquetado</span>':
+          '<span class="chip chip-lime text-[10px]">en camino</span>'}
+      </td>
+      <td><button class="text-muted hover:text-lime"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button></td>
+    </tr>
+  `).join('');
+}
+
+function renderInventory() {
+  document.getElementById('inventory-tbody').innerHTML = INVENTORY.map(it => {
+    const stcls = it.status==='low' ? 'ember' : it.status==='over' ? '[#9EC0FF]' : 'lime';
+    const stlbl = it.status==='low' ? 'reponer' : it.status==='over' ? 'sobre-stock' : 'óptimo';
+    return `
+      <tr>
+        <td><span class="num text-xs text-muted">${it.sku}</span></td>
+        <td><span class="font-semibold">${it.product}</span></td>
+        <td>${it.brand}</td>
+        <td class="num">${it.stock}</td>
+        <td class="num text-muted">${it.reserved}</td>
+        <td class="num font-semibold">${it.available}</td>
+        <td><div class="flex items-center gap-2"><span class="num">${it.cobertura}d</span><div class="w-16 h-1.5 bg-line rounded-full overflow-hidden"><div class="h-full bg-${stcls}" style="width:${Math.min(100,(it.cobertura/45)*100)}%"></div></div></div></td>
+        <td><span class="chip text-[10px] bg-${stcls}/10 text-${stcls} border border-${stcls}/30 chip-dot">${stlbl}</span></td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderAdminProducts() {
+  document.getElementById('admin-products-grid').innerHTML = PRODUCTS.map(p => `
+    <div class="bg-bg2 border border-line rounded-2xl p-4">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-14 h-14 rounded-xl ${p.blob} flex items-center justify-center flex-shrink-0">
+          <svg viewBox="0 0 40 60" class="bottle"><rect class="cap" x="13" y="2" width="14" height="6" rx="2"/><rect class="body" x="8" y="8" width="24" height="48" rx="4"/><rect class="label" x="9" y="22" width="22" height="20"/><text class="label-text" x="20" y="35" text-anchor="middle">${p.label}</text></svg>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="text-xs text-muted uppercase">${p.category}</div>
+          <div class="font-semibold truncate">${p.name}</div>
+          <div class="text-xs text-muted">${p.brand} · ${p.size}</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-xs">
+        <div><div class="text-muted">Precio</div><div class="num font-semibold">${priceFmt(p.price)}</div></div>
+        <div><div class="text-muted">Dosis</div><div class="num font-semibold">${p.default_dose}${p.dose_unit}/día</div></div>
+        <div><div class="text-muted">Suscriptos</div><div class="num font-semibold">${Math.floor(p.pop*28)}</div></div>
+        <div><div class="text-muted">Popularidad</div><div class="flex items-center gap-1.5"><div class="flex-1 h-1.5 bg-line rounded-full overflow-hidden"><div class="h-full bg-lime" style="width:${p.pop}%"></div></div><span class="num">${p.pop}</span></div></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderRevenue() {
+  // sparklines
+  ['rev-1','rev-2','rev-3'].forEach((id,i) => {
+    destroyChart(id);
+    const c = document.getElementById(id).getContext('2d');
+    const g = c.createLinearGradient(0,0,0,60);
+    g.addColorStop(0,'rgba(199,255,61,0.25)'); g.addColorStop(1,'rgba(199,255,61,0)');
+    const data = i===0 ? [10,12,11,14,16,18,17,19,21,23,22,24,26] : i===1 ? [3,4,3,5,5,6,4,5,7,8,7,8,9] : [4,4.5,4.6,4.8,5,5.1,5,5.2,5.3,5.3,5.4,5.4,5.4];
+    CHARTS[id] = new Chart(c, {
+      type:'line',
+      data: { labels:data.map((_,j)=>j), datasets:[{ data, borderColor:'#C7FF3D', borderWidth:1.5, tension:0.4, fill:true, backgroundColor:g, pointRadius:0 }] },
+      options: { plugins:{legend:{display:false}}, scales:{ x:{display:false}, y:{display:false}}, elements:{point:{radius:0}} }
+    });
+  });
+
+  destroyChart('chart-mrr');
+  const c = document.getElementById('chart-mrr').getContext('2d');
+  CHARTS['chart-mrr'] = new Chart(c, {
+    type:'bar',
+    data: {
+      labels:['Ene','Feb','Mar','Abr','May'],
+      datasets:[
+        { label:'New', data:[1.2,1.5,1.8,2.1,2.4], backgroundColor:'#C7FF3D', borderRadius:6, stack:'a' },
+        { label:'Expansion', data:[0.4,0.5,0.6,0.7,0.9], backgroundColor:'#A6E512', borderRadius:6, stack:'a' },
+        { label:'Reactivación', data:[0.1,0.2,0.2,0.2,0.3], backgroundColor:'#9EC0FF', borderRadius:6, stack:'a' },
+        { label:'Contracción', data:[-0.3,-0.4,-0.4,-0.5,-0.5], backgroundColor:'#FFD245', borderRadius:6, stack:'a' },
+        { label:'Churn', data:[-0.5,-0.6,-0.6,-0.7,-0.9], backgroundColor:'#FF7A45', borderRadius:6, stack:'a' }
+      ]
+    },
+    options: {
+      responsive:true,
+      plugins:{legend:{position:'bottom', labels:{color:'#E8EAE3', boxWidth:10}}},
+      scales:{
+        x:{stacked:true, grid:{color:'#22251f44'}, ticks:{color:'#8A8F85'}},
+        y:{stacked:true, grid:{color:'#22251f44'}, ticks:{color:'#8A8F85', callback: v=>'$'+v+'M'}}
+      }
+    }
+  });
+
+  // cohorts
+  const months = ['Dic 25','Ene 26','Feb 26','Mar 26','Abr 26'];
+  const cohort = [
+    [100, 94, 89, 86, 84],
+    [100, 96, 92, 88, null],
+    [100, 95, 91, null, null],
+    [100, 97, null, null, null],
+    [100, null, null, null, null],
+  ];
+  document.getElementById('cohort-table').innerHTML = `
+    <table class="w-full">
+      <thead><tr><th class="text-left text-[10px] text-muted uppercase pb-2 font-semibold">Cohorte</th>${['M0','M1','M2','M3','M4'].map(m=>`<th class="text-center text-[10px] text-muted uppercase pb-2 font-semibold">${m}</th>`).join('')}</tr></thead>
+      <tbody>
+      ${cohort.map((row,i) => `
+        <tr>
+          <td class="text-left py-1.5 text-[11px] text-muted">${months[i]}</td>
+          ${row.map(v => v===null ? '<td></td>' : `<td class="text-center"><div class="rounded-md py-1.5 text-[11px] font-semibold num" style="background:rgba(199,255,61,${v/120}); color:${v>92?'#0A0B0A':'#E8EAE3'}">${v}%</div></td>`).join('')}
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+
+  // brand revenue
+  const brandRev = [
+    {b:'Star Nutrition', r:5.84, pct:30},
+    {b:'ENA Sport', r:4.86, pct:25},
+    {b:'Optimum', r:2.91, pct:15},
+    {b:'Mervick', r:2.33, pct:12},
+    {b:'Universal', r:1.94, pct:10},
+    {b:'Birdman', r:1.55, pct:8}
+  ];
+  document.getElementById('brand-revenue').innerHTML = brandRev.map(x => `
+    <div>
+      <div class="flex justify-between text-sm mb-1"><span>${x.b}</span><span class="num text-lime">$ ${x.r}M</span></div>
+      <div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-lime" style="width:${x.pct*3.3}%"></div></div>
+    </div>
+  `).join('');
+}
+
+function renderChurn() {
+  const atrisk = USERS.filter(u => u.status === 'risk').slice(0,6);
+  document.getElementById('at-risk').innerHTML = atrisk.map(u => `
+    <div class="bg-bg border border-line rounded-2xl p-3 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-full bg-gradient-to-br from-ember to-lime flex-shrink-0"></div>
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold text-sm">${u.name}</div>
+        <div class="text-xs text-muted">${u.plan} · ${priceFmt(u.mrr)}/mes · pausado 2x</div>
+      </div>
+      <button class="btn-primary text-[11px] py-1.5 px-3">Retener</button>
+    </div>
+  `).join('');
+}
+
+/* =================== TOAST =================== */
+function toast(msg) {
+  document.getElementById('toast-text').textContent = msg;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(window.__tt);
+  window.__tt = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* =================== INIT =================== */
+window.addEventListener('DOMContentLoaded', () => {
+  // mark demo as initially active nav
+  document.querySelectorAll('[data-nav]').forEach(a => a.classList.toggle('active', a.dataset.nav === 'demo'));
+});
+</script>
+</body>
+</html>
