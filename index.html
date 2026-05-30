@@ -41,6 +41,12 @@ tailwind.config = {
   ::-webkit-scrollbar-thumb { background: #22251f; border-radius: 10px; }
   ::-webkit-scrollbar-thumb:hover { background: #2f3329; }
 
+  /* tenant theming */
+  :root { --accent: #C7FF3D; --accent-d: #A6E512; }
+  .accent-bg { background: var(--accent); }
+  .accent-text { color: var(--accent); }
+  .accent-border { border-color: var(--accent); }
+
   .grain {
     background-image:
       radial-gradient(rgba(199,255,61,0.04) 1px, transparent 1px),
@@ -156,23 +162,49 @@ tailwind.config = {
 
 <!-- ===================== TOP BAR ===================== -->
 <header class="sticky top-0 z-50 backdrop-blur-xl bg-bg/75 border-b border-line/60">
-  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
-    <a class="flex items-center gap-2 cursor-pointer" onclick="nav('landing')">
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-4 flex items-center gap-4">
+    <a class="flex items-center gap-2 cursor-pointer flex-shrink-0" onclick="nav('demo')">
       <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
         <rect x="2" y="2" width="28" height="28" rx="9" fill="#C7FF3D"/>
         <path d="M10 22 V10 H22 M10 16 H19" stroke="#0A0B0A" stroke-width="3" stroke-linecap="square"/>
       </svg>
-      <span class="display font-bold text-[22px] tracking-tight">fitsupply<span class="text-lime">.</span></span>
+      <span class="display font-bold text-[16px] tracking-tight">fitsupply<span class="text-lime">.</span>OS</span>
     </a>
-    <nav class="hidden md:flex items-center gap-1">
+
+    <div class="w-px h-6 bg-line hidden lg:block"></div>
+
+    <!-- Tenant switcher -->
+    <div class="relative">
+      <button id="tenant-switcher-btn" onclick="toggleTenantMenu()" class="flex items-center gap-2 bg-bg2 border border-line rounded-full pl-2 pr-3 py-1.5 hover:border-lime/40 transition">
+        <span id="tenant-dot" class="w-6 h-6 rounded-full" style="background:#C7FF3D"></span>
+        <span class="text-sm font-semibold" id="tenant-name">FitSupply</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A8F85" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div id="tenant-menu" class="hidden absolute top-full left-0 mt-2 w-72 bg-bg2 border border-line rounded-2xl p-2 z-50 glow-soft">
+        <div class="text-[10px] text-muted uppercase tracking-wider px-3 py-2">Tus tiendas</div>
+        <div id="tenant-list"></div>
+        <div class="hr my-1"></div>
+        <button onclick="nav('onboarding'); toggleTenantMenu();" class="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-bg flex items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Crear tienda nueva
+        </button>
+        <button onclick="nav('platform'); toggleTenantMenu();" class="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-bg flex items-center gap-2 text-muted">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Plataforma · super admin
+        </button>
+      </div>
+    </div>
+
+    <nav class="hidden lg:flex items-center gap-1 ml-auto">
       <a class="navlink" data-nav="demo" onclick="nav('demo')">Demo</a>
       <a class="navlink" data-nav="landing" onclick="nav('landing')">Inicio</a>
       <a class="navlink" data-nav="shop" onclick="nav('shop')">Catálogo</a>
-      <a class="navlink" data-nav="builder" onclick="nav('builder')">Armá tu plan</a>
-      <a class="navlink" data-nav="account" onclick="nav('account')">Mi cuenta</a>
+      <a class="navlink" data-nav="builder" onclick="nav('builder')">Plan</a>
+      <a class="navlink" data-nav="account" onclick="nav('account')">Cuenta</a>
       <a class="navlink" data-nav="admin" onclick="nav('admin')">Admin</a>
+      <a class="navlink" data-nav="platform" onclick="nav('platform')">Plataforma</a>
       <a class="navlink" data-nav="market" onclick="nav('market')">Mercado</a>
-      <a class="navlink" data-nav="integrations" onclick="nav('integrations')">Integraciones</a>
+      <a class="navlink" data-nav="integrations" onclick="nav('integrations')">Stack</a>
     </nav>
     <div class="flex items-center gap-2">
       <button class="hidden md:inline-flex items-center gap-2 text-muted text-sm px-3 py-2 border border-line rounded-full">
@@ -186,6 +218,14 @@ tailwind.config = {
     </div>
   </div>
 </header>
+
+<style>
+  /* Tenant theming overrides — repintán acento cuando cambia tenant */
+  [data-tenant-themed] .text-lime { color: var(--accent) !important; }
+  [data-tenant-themed] .bg-lime { background: var(--accent) !important; color: #0A0B0A !important; }
+  [data-tenant-themed] .border-lime { border-color: var(--accent) !important; }
+  [data-tenant-themed] .ring-lime { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent) !important; }
+</style>
 
 <!-- ===================== DEMO MENU (entry point) ===================== -->
 <section class="page active" id="page-demo">
@@ -335,6 +375,34 @@ tailwind.config = {
         <div class="text-xs text-muted uppercase tracking-wider mb-1">Arquitectura</div>
         <h3 class="display text-xl font-semibold mb-2">Integraciones</h3>
         <p class="text-muted text-sm leading-relaxed">MercadoPago, Andreani, WhatsApp Wati, Postmark. Costos a 1.000 suscriptores.</p>
+        <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+      </a>
+
+      <a class="bg-bg2 border border-lime/30 rounded-3xl p-6 hover:border-lime/60 transition cursor-pointer block relative" onclick="nav('platform')">
+        <span class="chip chip-lime absolute top-5 right-5 text-[10px]">nuevo</span>
+        <div class="flex items-center justify-between mb-5">
+          <div class="w-11 h-11 rounded-xl bg-lime/10 ring-lime flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          </div>
+          <span class="num text-muted text-xs">08</span>
+        </div>
+        <div class="text-xs text-muted uppercase tracking-wider mb-1">Multitenant · super admin</div>
+        <h3 class="display text-xl font-semibold mb-2">Plataforma</h3>
+        <p class="text-muted text-sm leading-relaxed">FitSupply OS: vista de todos los tenants. 4 tiendas demo (FitSupply, Tornado, Iron Club, Vida Sana).</p>
+        <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+      </a>
+
+      <a class="bg-bg2 border border-lime/30 rounded-3xl p-6 hover:border-lime/60 transition cursor-pointer block relative" onclick="nav('onboarding')">
+        <span class="chip chip-lime absolute top-5 right-5 text-[10px]">nuevo</span>
+        <div class="flex items-center justify-between mb-5">
+          <div class="w-11 h-11 rounded-xl bg-lime/10 ring-lime flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <span class="num text-muted text-xs">09</span>
+        </div>
+        <div class="text-xs text-muted uppercase tracking-wider mb-1">Onboarding</div>
+        <h3 class="display text-xl font-semibold mb-2">Crear tienda nueva</h3>
+        <p class="text-muted text-sm leading-relaxed">Wizard de 5 pasos: negocio → branding → catálogo → integraciones → dominio.</p>
         <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
       </a>
 
@@ -1419,6 +1487,392 @@ tailwind.config = {
   </div>
 </section>
 
+<!-- ===================== PLATFORM (SUPER ADMIN) ===================== -->
+<section class="page" id="page-platform">
+  <div class="max-w-[1600px] mx-auto px-4 lg:px-6 py-6">
+
+    <!-- Top banner -->
+    <div class="bg-bg2 border border-lime/30 rounded-3xl p-6 lg:p-8 mb-5 relative overflow-hidden">
+      <div class="absolute -top-10 -right-10 w-[280px] h-[280px] rounded-full bg-lime/10 blur-[100px] pointer-events-none"></div>
+      <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="chip chip-lime chip-dot pulse-dot">super admin · platform owner</span>
+            <span class="chip chip-mut">FitSupply OS v1.0</span>
+          </div>
+          <h1 class="display text-4xl lg:text-5xl font-bold tracking-tight leading-[0.95]">Plataforma · 4 tiendas activas</h1>
+          <p class="text-muted mt-2">Cada tienda corre su propia operación de suscripción. Compartís infraestructura, no datos.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn-ghost text-sm py-2.5 px-4">Exportar</button>
+          <button class="btn-primary text-sm py-2.5 px-4" onclick="nav('onboarding')">+ Nueva tienda</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Platform KPIs -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+      <div class="bg-bg2 border border-line rounded-2xl p-4">
+        <div class="text-[10px] text-muted uppercase tracking-wider">Tenants totales</div>
+        <div class="display text-3xl font-bold num">4</div>
+        <div class="text-xs text-muted mt-1">3 activos · 1 trial</div>
+      </div>
+      <div class="bg-bg2 border border-line rounded-2xl p-4">
+        <div class="text-[10px] text-muted uppercase tracking-wider">MRR consolidado</div>
+        <div class="display text-3xl font-bold num text-lime">$ 31.8M</div>
+        <div class="text-xs text-muted mt-1">ARS · +24% MoM</div>
+      </div>
+      <div class="bg-bg2 border border-line rounded-2xl p-4">
+        <div class="text-[10px] text-muted uppercase tracking-wider">Suscriptores totales</div>
+        <div class="display text-3xl font-bold num">4.197</div>
+        <div class="text-xs text-muted mt-1">en los 4 tenants</div>
+      </div>
+      <div class="bg-bg2 border border-line rounded-2xl p-4">
+        <div class="text-[10px] text-muted uppercase tracking-wider">Envíos · esta semana</div>
+        <div class="display text-3xl font-bold num">1.428</div>
+        <div class="text-xs text-muted mt-1">across all tenants</div>
+      </div>
+      <div class="bg-bg2 border border-line rounded-2xl p-4">
+        <div class="text-[10px] text-muted uppercase tracking-wider">SaaS revenue (FS OS)</div>
+        <div class="display text-3xl font-bold num">US$ 1.046</div>
+        <div class="text-xs text-muted mt-1">2 Grow + 1 Scale</div>
+      </div>
+    </div>
+
+    <div class="grid lg:grid-cols-12 gap-4">
+
+      <!-- Tenants grid -->
+      <div class="lg:col-span-8">
+        <div class="bg-bg2 border border-line rounded-3xl overflow-hidden">
+          <div class="px-6 py-4 border-b border-line flex items-center justify-between">
+            <h3 class="display text-xl font-semibold">Tenants</h3>
+            <div class="flex items-center gap-2">
+              <div class="seg"><button class="on">Cards</button><button>Lista</button></div>
+              <select class="bg-bg border border-line rounded-full px-3 py-1.5 text-xs"><option>Todos</option><option>Activos</option><option>Trial</option><option>Suspendidos</option></select>
+            </div>
+          </div>
+          <div class="p-4 grid sm:grid-cols-2 gap-3" id="tenants-grid"></div>
+        </div>
+
+        <!-- Cross-tenant chart -->
+        <div class="bg-bg2 border border-line rounded-3xl p-6 mt-4">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="display text-xl font-semibold">MRR consolidado · últimos 6 meses</h3>
+              <div class="text-muted text-xs">ARS · stacked por tenant</div>
+            </div>
+          </div>
+          <canvas id="platform-mrr" height="220"></canvas>
+        </div>
+      </div>
+
+      <!-- Side: plans + recent events -->
+      <div class="lg:col-span-4 space-y-4">
+        <div class="bg-bg2 border border-line rounded-3xl p-6">
+          <h3 class="display text-xl font-semibold mb-4">Distribución por plan</h3>
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Scale</span><span class="num">1 tenant · US$ 449/mes</span></div>
+              <div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-lime" style="width:25%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Grow</span><span class="num">2 tenants · US$ 149/mes</span></div>
+              <div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-[#A6E512]" style="width:50%"></div></div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Seed</span><span class="num">1 tenant · gratis</span></div>
+              <div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-[#9EC0FF]" style="width:25%"></div></div>
+            </div>
+          </div>
+          <div class="hr my-4"></div>
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div><div class="text-muted text-[10px] uppercase tracking-wider">ARPU SaaS</div><div class="num font-semibold">US$ 262</div></div>
+            <div><div class="text-muted text-[10px] uppercase tracking-wider">LTV target</div><div class="num font-semibold">US$ 4.7k</div></div>
+          </div>
+        </div>
+
+        <div class="bg-bg2 border border-line rounded-3xl p-6">
+          <h3 class="display text-xl font-semibold mb-4">Platform events · hoy</h3>
+          <div class="space-y-3 text-sm">
+            <div class="flex items-start gap-3">
+              <div class="w-2 h-2 rounded-full bg-lime mt-1.5 flex-shrink-0"></div>
+              <div><div class="font-semibold">Vida Sana Pro activó MercadoPago</div><div class="text-muted text-xs">trial · hace 12 min</div></div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-2 h-2 rounded-full bg-[#9EC0FF] mt-1.5 flex-shrink-0"></div>
+              <div><div class="font-semibold">Iron Club subió plan a Grow</div><div class="text-muted text-xs">hace 1 h · +US$ 149/mes</div></div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-2 h-2 rounded-full bg-lime mt-1.5 flex-shrink-0"></div>
+              <div><div class="font-semibold">Tornado vinculó custom domain</div><div class="text-muted text-xs">tienda.tornadosup.com.ar · verificado</div></div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-2 h-2 rounded-full bg-ember mt-1.5 flex-shrink-0"></div>
+              <div><div class="font-semibold">FitSupply alcanzó 2.831 suscriptores</div><div class="text-muted text-xs">milestone · plan límite Grow</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-bg2 border border-line rounded-3xl p-6">
+          <h3 class="display text-xl font-semibold mb-3">Aislamiento de datos</h3>
+          <p class="text-muted text-sm mb-4">RLS en Supabase: cada tenant solo ve sus filas. El super admin (vos) ve todo via <span class="num">is_platform_admin()</span>.</p>
+          <pre class="text-[10px] font-mono bg-bg p-3 rounded-xl border border-line text-muted overflow-x-auto">
+create policy products_tenant
+  on products for all
+  using (
+    tenant_id in (
+      select current_user_tenants()
+    )
+    or is_platform_admin()
+  );</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ONBOARDING WIZARD ===================== -->
+<section class="page" id="page-onboarding">
+  <div class="max-w-[1100px] mx-auto px-6 lg:px-10 py-12">
+
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <div class="flex items-center gap-2 mb-2"><span class="chip chip-lime">5 pasos · 8 minutos</span></div>
+        <h1 class="display text-4xl lg:text-5xl font-bold tracking-tight leading-[0.95]">Creá tu tienda.</h1>
+      </div>
+      <button class="text-muted text-sm" onclick="nav('platform')">← Volver a Plataforma</button>
+    </div>
+
+    <!-- Progress -->
+    <div class="grid grid-cols-5 gap-2 mb-8">
+      <div data-step="1" class="onboard-step">
+        <div class="num text-xs text-muted mb-1">PASO 01</div>
+        <div class="font-semibold text-sm">Negocio</div>
+        <div class="h-1 bg-line rounded-full mt-2 overflow-hidden"><div class="h-full bg-lime w-full"></div></div>
+      </div>
+      <div data-step="2" class="onboard-step opacity-50">
+        <div class="num text-xs text-muted mb-1">PASO 02</div>
+        <div class="font-semibold text-sm">Branding</div>
+        <div class="h-1 bg-line rounded-full mt-2 overflow-hidden"><div class="h-full bg-lime" style="width:0%"></div></div>
+      </div>
+      <div data-step="3" class="onboard-step opacity-50">
+        <div class="num text-xs text-muted mb-1">PASO 03</div>
+        <div class="font-semibold text-sm">Catálogo</div>
+        <div class="h-1 bg-line rounded-full mt-2 overflow-hidden"><div class="h-full bg-lime" style="width:0%"></div></div>
+      </div>
+      <div data-step="4" class="onboard-step opacity-50">
+        <div class="num text-xs text-muted mb-1">PASO 04</div>
+        <div class="font-semibold text-sm">Integraciones</div>
+        <div class="h-1 bg-line rounded-full mt-2 overflow-hidden"><div class="h-full bg-lime" style="width:0%"></div></div>
+      </div>
+      <div data-step="5" class="onboard-step opacity-50">
+        <div class="num text-xs text-muted mb-1">PASO 05</div>
+        <div class="font-semibold text-sm">Dominio</div>
+        <div class="h-1 bg-line rounded-full mt-2 overflow-hidden"><div class="h-full bg-lime" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <!-- Step 1: Negocio -->
+    <div class="onboard-page" data-page="1">
+      <div class="bg-bg2 border border-line rounded-3xl p-8 mb-4">
+        <h2 class="display text-2xl font-semibold mb-1">Contanos de la tienda</h2>
+        <p class="text-muted text-sm mb-6">Esto define cómo aparece tu tienda en facturas, emails y en tu URL.</p>
+        <div class="grid md:grid-cols-2 gap-5">
+          <label class="block">
+            <span class="text-xs text-muted uppercase tracking-wider">Nombre de la tienda</span>
+            <input value="Tornado Suplementos" class="mt-1 w-full bg-bg border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-lime/50"/>
+          </label>
+          <label class="block">
+            <span class="text-xs text-muted uppercase tracking-wider">Slug (subdominio)</span>
+            <div class="mt-1 flex items-center bg-bg border border-line rounded-xl overflow-hidden">
+              <input value="tornado" class="flex-1 px-4 py-3 text-sm bg-transparent focus:outline-none"/>
+              <span class="text-xs text-muted pr-4">.fitsupply.cloud</span>
+            </div>
+          </label>
+          <label class="block">
+            <span class="text-xs text-muted uppercase tracking-wider">Razón social</span>
+            <input value="Tornado Suplementos SRL" class="mt-1 w-full bg-bg border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-lime/50"/>
+          </label>
+          <label class="block">
+            <span class="text-xs text-muted uppercase tracking-wider">CUIT</span>
+            <input value="30-71234567-0" class="mt-1 w-full bg-bg border border-line rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-lime/50 num"/>
+          </label>
+          <label class="block">
+            <span class="text-xs text-muted uppercase tracking-wider">País</span>
+            <select class="mt-1 w-full bg-bg border border-line rounded-xl px-4 py-3 text-sm"><option>Argentina</option><option>Chile</option><option>Uruguay</option><option>México</option></select>
+          </label>
+          <label class="block">
+            <span class="text-xs text-muted uppercase tracking-wider">Moneda</span>
+            <select class="mt-1 w-full bg-bg border border-line rounded-xl px-4 py-3 text-sm"><option>ARS</option><option>USD</option><option>CLP</option><option>UYU</option></select>
+          </label>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2"><button class="btn-ghost">Guardar borrador</button><button class="btn-primary" onclick="goStep(2)">Siguiente · Branding →</button></div>
+    </div>
+
+    <!-- Step 2: Branding -->
+    <div class="onboard-page hidden" data-page="2">
+      <div class="grid lg:grid-cols-12 gap-4">
+        <div class="lg:col-span-7">
+          <div class="bg-bg2 border border-line rounded-3xl p-8">
+            <h2 class="display text-2xl font-semibold mb-1">Tu marca, no la nuestra</h2>
+            <p class="text-muted text-sm mb-6">Color, tipografía, copy. Cambiá todo desde acá sin tocar código.</p>
+            <div class="grid md:grid-cols-2 gap-5">
+              <label class="block">
+                <span class="text-xs text-muted uppercase tracking-wider">Color primario</span>
+                <div class="mt-1 grid grid-cols-6 gap-2">
+                  <button data-color="#C7FF3D" onclick="pickColor('#C7FF3D')" class="aspect-square rounded-xl border border-line ring-2 ring-lime" style="background:#C7FF3D"></button>
+                  <button data-color="#FF7A45" onclick="pickColor('#FF7A45')" class="aspect-square rounded-xl border border-line" style="background:#FF7A45"></button>
+                  <button data-color="#9EC0FF" onclick="pickColor('#9EC0FF')" class="aspect-square rounded-xl border border-line" style="background:#9EC0FF"></button>
+                  <button data-color="#FFD245" onclick="pickColor('#FFD245')" class="aspect-square rounded-xl border border-line" style="background:#FFD245"></button>
+                  <button data-color="#FF7AC8" onclick="pickColor('#FF7AC8')" class="aspect-square rounded-xl border border-line" style="background:#FF7AC8"></button>
+                  <button data-color="#C8A2FF" onclick="pickColor('#C8A2FF')" class="aspect-square rounded-xl border border-line" style="background:#C8A2FF"></button>
+                </div>
+              </label>
+              <label class="block">
+                <span class="text-xs text-muted uppercase tracking-wider">Tipografía display</span>
+                <select class="mt-1 w-full bg-bg border border-line rounded-xl px-4 py-3 text-sm"><option>Space Grotesk</option><option>Inter</option><option>Manrope</option><option>Plus Jakarta Sans</option></select>
+              </label>
+              <label class="block md:col-span-2">
+                <span class="text-xs text-muted uppercase tracking-wider">Headline del hero</span>
+                <input value="Recibí tus suplementos sin pensar." class="mt-1 w-full bg-bg border border-line rounded-xl px-4 py-3 text-sm"/>
+              </label>
+              <label class="block md:col-span-2">
+                <span class="text-xs text-muted uppercase tracking-wider">Logo (opcional)</span>
+                <div class="mt-1 border border-dashed border-line rounded-xl p-6 text-center text-muted text-sm">
+                  Arrastrá un PNG/SVG · max 200KB
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5">
+          <div class="bg-bg2 border border-line rounded-3xl p-5 sticky top-24">
+            <div class="text-xs text-muted uppercase tracking-wider mb-3">Preview en vivo</div>
+            <div class="bg-bg rounded-2xl p-5 border border-line">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="w-7 h-7 rounded-lg" id="preview-logo" style="background:#FF7A45"></div>
+                <span class="display font-bold">Tornado<span id="preview-dot" style="color:#FF7A45">.</span></span>
+              </div>
+              <div class="display font-bold text-2xl leading-tight mb-3" id="preview-headline">Recibí tus suplementos sin pensar.</div>
+              <button class="text-bg font-bold text-xs py-2 px-3 rounded-full" id="preview-cta" style="background:#FF7A45">Armar plan →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-between gap-2 mt-4">
+        <button class="btn-ghost" onclick="goStep(1)">← Anterior</button>
+        <button class="btn-primary" onclick="goStep(3)">Siguiente · Catálogo →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Catálogo -->
+    <div class="onboard-page hidden" data-page="3">
+      <div class="bg-bg2 border border-line rounded-3xl p-8 mb-4">
+        <h2 class="display text-2xl font-semibold mb-1">Importá tu catálogo</h2>
+        <p class="text-muted text-sm mb-6">Empezá con los suplementos más vendidos en AR o subí un CSV.</p>
+        <div class="grid md:grid-cols-2 gap-3 mb-6">
+          <button class="bg-bg border-2 border-lime rounded-2xl p-5 text-left">
+            <div class="flex items-center justify-between mb-3"><div class="w-10 h-10 rounded-xl bg-lime/10 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><span class="chip chip-lime text-[10px]">recomendado</span></div>
+            <div class="font-semibold mb-1">Catálogo base AR</div>
+            <div class="text-muted text-xs">18 SKUs curados: creatina, whey, omega, multivit, magnesio, vit D, ashwagandha, colágeno y más. Marcas ENA, Star, Mervick, Gentech.</div>
+          </button>
+          <button class="bg-bg border border-line rounded-2xl p-5 text-left">
+            <div class="flex items-center justify-between mb-3"><div class="w-10 h-10 rounded-xl bg-bg2 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A8F85" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div></div>
+            <div class="font-semibold mb-1">Subir CSV</div>
+            <div class="text-muted text-xs">Si ya tenés tu catálogo. Columnas: name, brand, category, pack_amount, dose, price.</div>
+          </button>
+        </div>
+        <div class="text-xs text-muted uppercase tracking-wider mb-2">Top productos del catálogo base</div>
+        <div class="grid sm:grid-cols-3 gap-2">
+          <div class="bg-bg border border-line rounded-xl p-3 flex items-center gap-3"><div class="w-10 h-10 rounded-lg blob-creatina flex items-center justify-center"><svg viewBox="0 0 40 60" class="bottle"><rect class="cap" x="13" y="2" width="14" height="6" rx="2"/><rect class="body" x="8" y="8" width="24" height="48" rx="4"/><rect class="label" x="9" y="22" width="22" height="20"/><text class="label-text" x="20" y="35" text-anchor="middle">CR</text></svg></div><div class="text-xs"><div class="font-semibold">Creatina ENA 300g</div><div class="text-muted">AR$ 18.900</div></div></div>
+          <div class="bg-bg border border-line rounded-xl p-3 flex items-center gap-3"><div class="w-10 h-10 rounded-lg blob-whey flex items-center justify-center"><svg viewBox="0 0 40 60" class="bottle"><rect class="cap" x="13" y="2" width="14" height="6" rx="2"/><rect class="body" x="8" y="8" width="24" height="48" rx="4"/><rect class="label" x="9" y="22" width="22" height="20" fill="#FF7A45"/><text class="label-text" x="20" y="35" text-anchor="middle">WH</text></svg></div><div class="text-xs"><div class="font-semibold">Whey Star 1kg</div><div class="text-muted">AR$ 32.400</div></div></div>
+          <div class="bg-bg border border-line rounded-xl p-3 flex items-center gap-3"><div class="w-10 h-10 rounded-lg blob-omega flex items-center justify-center"><svg viewBox="0 0 40 60" class="bottle"><rect class="cap" x="13" y="2" width="14" height="6" rx="2"/><rect class="body" x="8" y="8" width="24" height="48" rx="4"/><rect class="label" x="9" y="22" width="22" height="20" fill="#9EC0FF"/><text class="label-text" x="20" y="35" text-anchor="middle">O3</text></svg></div><div class="text-xs"><div class="font-semibold">Omega Mervick</div><div class="text-muted">AR$ 14.500</div></div></div>
+        </div>
+      </div>
+      <div class="flex justify-between gap-2"><button class="btn-ghost" onclick="goStep(2)">← Anterior</button><button class="btn-primary" onclick="goStep(4)">Siguiente · Integraciones →</button></div>
+    </div>
+
+    <!-- Step 4: Integraciones -->
+    <div class="onboard-page hidden" data-page="4">
+      <div class="bg-bg2 border border-line rounded-3xl p-8 mb-4">
+        <h2 class="display text-2xl font-semibold mb-1">Conectá tus servicios</h2>
+        <p class="text-muted text-sm mb-6">Los cobros y envíos pueden ir a tu cuenta directamente. FitSupply OS solo orquesta.</p>
+        <div class="space-y-3">
+          <div class="bg-bg border border-line rounded-2xl p-4 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-[#00B1EA]/10 flex items-center justify-center"><span class="display font-bold text-[#00B1EA]">M</span></div>
+            <div class="flex-1"><div class="font-semibold">MercadoPago Preapproval</div><div class="text-muted text-xs">Cobro recurrente a tarjeta · 4.99–6.29%</div></div>
+            <button class="btn-primary text-xs py-2 px-3">Conectar OAuth</button>
+          </div>
+          <div class="bg-bg border border-line rounded-2xl p-4 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-[#9EC0FF]/10 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9EC0FF" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+            <div class="flex-1"><div class="font-semibold">Payway débito CBU <span class="chip chip-mut text-[9px] ml-1">opcional</span></div><div class="text-muted text-xs">Backup para reducir churn · ~3%</div></div>
+            <button class="btn-ghost text-xs py-2 px-3">Más tarde</button>
+          </div>
+          <div class="bg-bg border border-line rounded-2xl p-4 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-[#FF6900]/10 flex items-center justify-center"><span class="display font-bold text-[#FF6900]">A</span></div>
+            <div class="flex-1"><div class="font-semibold">Andreani</div><div class="text-muted text-xs">Logística nacional · etiquetas y tracking</div></div>
+            <button class="btn-primary text-xs py-2 px-3">Conectar</button>
+          </div>
+          <div class="bg-bg border border-line rounded-2xl p-4 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-[#25D366]/10 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="#25D366"><path d="M17.5 14.4l-2.3-.7c-.3-.1-.7 0-.9.3l-.8.9c-.2.2-.5.3-.7.2-1.2-.5-2.2-1.2-3-2.1-.2-.2-.2-.5-.1-.7l.5-.9c.2-.3.2-.7 0-1l-1-2c-.2-.4-.6-.6-1-.6h-.9c-.4 0-.8.2-1.1.5-1.5 1.7-1 4.4 1.4 6.9 2.5 2.5 5.2 3 6.9 1.5.3-.3.5-.7.5-1.1v-1c0-.4-.2-.8-.5-1.2z"/></svg></div>
+            <div class="flex-1"><div class="font-semibold">WhatsApp · Wati</div><div class="text-muted text-xs">Notificar envíos, dosis, pausas</div></div>
+            <button class="btn-ghost text-xs py-2 px-3">Más tarde</button>
+          </div>
+          <div class="bg-bg border border-line rounded-2xl p-4 flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-[#FFB545]/10 flex items-center justify-center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFB545" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg></div>
+            <div class="flex-1"><div class="font-semibold">AFIP · TusFacturas</div><div class="text-muted text-xs">Facturación electrónica</div></div>
+            <button class="btn-ghost text-xs py-2 px-3">Más tarde</button>
+          </div>
+        </div>
+        <div class="mt-6 bg-bg border border-line rounded-xl p-3 text-xs text-muted">
+          <span class="text-lime font-semibold">Tip:</span> mínimo necesario para arrancar es MercadoPago + Andreani. El resto los activás cuando crezcas.
+        </div>
+      </div>
+      <div class="flex justify-between gap-2"><button class="btn-ghost" onclick="goStep(3)">← Anterior</button><button class="btn-primary" onclick="goStep(5)">Siguiente · Dominio →</button></div>
+    </div>
+
+    <!-- Step 5: Dominio -->
+    <div class="onboard-page hidden" data-page="5">
+      <div class="bg-bg2 border border-line rounded-3xl p-8 mb-4">
+        <h2 class="display text-2xl font-semibold mb-1">¿Dónde va a vivir tu tienda?</h2>
+        <p class="text-muted text-sm mb-6">Empezá con el subdominio gratuito. Cuando estés listo agregás tu dominio.</p>
+        <div class="grid md:grid-cols-2 gap-3 mb-6">
+          <div class="bg-bg border-2 border-lime rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-2"><div class="text-xs text-muted uppercase tracking-wider">Incluido</div><span class="chip chip-lime text-[10px]">listo ya</span></div>
+            <div class="display text-xl font-semibold mb-1">tornado.fitsupply.cloud</div>
+            <div class="text-muted text-xs">HTTPS automático · CDN global · sin configurar nada</div>
+          </div>
+          <div class="bg-bg border border-line rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-2"><div class="text-xs text-muted uppercase tracking-wider">Custom domain</div><span class="chip chip-mut text-[10px]">Grow+</span></div>
+            <div class="display text-xl font-semibold mb-1">tienda.tornadosup.com.ar</div>
+            <div class="text-muted text-xs">Agregá un CNAME apuntando a edge.fitsupply.cloud</div>
+          </div>
+        </div>
+        <div class="bg-bg border border-line rounded-2xl p-5">
+          <div class="text-xs text-muted uppercase tracking-wider mb-2">Resumen final</div>
+          <div class="grid md:grid-cols-2 gap-3 text-sm">
+            <div class="flex justify-between"><span class="text-muted">Tienda</span><span class="font-semibold">Tornado Suplementos</span></div>
+            <div class="flex justify-between"><span class="text-muted">Slug</span><span class="num">tornado</span></div>
+            <div class="flex justify-between"><span class="text-muted">Color primario</span><span class="flex items-center gap-1"><span class="w-3 h-3 rounded" style="background:#FF7A45"></span><span class="num">#FF7A45</span></span></div>
+            <div class="flex justify-between"><span class="text-muted">Catálogo</span><span class="num">18 SKUs</span></div>
+            <div class="flex justify-between"><span class="text-muted">Pagos</span><span class="text-lime font-semibold">MercadoPago ✓</span></div>
+            <div class="flex justify-between"><span class="text-muted">Logística</span><span class="text-lime font-semibold">Andreani ✓</span></div>
+            <div class="flex justify-between"><span class="text-muted">Plan</span><span class="font-semibold">Grow · US$ 149/mes</span></div>
+            <div class="flex justify-between"><span class="text-muted">Trial</span><span class="num">14 días</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-between gap-2">
+        <button class="btn-ghost" onclick="goStep(4)">← Anterior</button>
+        <button class="btn-primary py-4 px-8" onclick="finishOnboarding()">🚀 Crear tienda</button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
 <!-- ===================== MARKET RESEARCH ===================== -->
 <section class="page" id="page-market">
   <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-12">
@@ -2024,6 +2478,56 @@ tailwind.config = {
 
 <!-- ===================== DATA + LOGIC ===================== -->
 <script>
+/* =================== TENANTS (multitenant demo) ================== */
+const TENANTS = [
+  { id:'11111111', slug:'fitsupply', name:'FitSupply',           color:'#C7FF3D', domain:'app.fitsupply.cloud',         plan:'Scale', planUsd:449, status:'active', subs:2831, mrr:19420000, churn:2.1, since:'feb 2026', headline:'Tu rutina de suplementos en piloto automático.' },
+  { id:'22222222', slug:'tornado',   name:'Tornado Suplementos', color:'#FF7A45', domain:'tienda.tornadosup.com.ar',    plan:'Grow',  planUsd:149, status:'active', subs:847,  mrr:6840000,  churn:3.4, since:'mar 2026', headline:'Recibí tus suplementos sin pensar.' },
+  { id:'33333333', slug:'ironclub',  name:'Iron Club Box',       color:'#9EC0FF', domain:'ironclub.fitsupply.cloud',    plan:'Grow',  planUsd:149, status:'active', subs:412,  mrr:4180000,  churn:4.8, since:'abr 2026', headline:'Iron Club Box · entrenamiento + nutrición.' },
+  { id:'44444444', slug:'vidasana',  name:'Vida Sana Pro',       color:'#FFD245', domain:'vidasana.fitsupply.cloud',    plan:'Seed',  planUsd:0,   status:'trial',  subs:107,  mrr:1380000,  churn:6.1, since:'may 2026', headline:'Suplementación natural por suscripción.' },
+];
+
+let CURRENT_TENANT = TENANTS[0];
+
+function switchTenant(slug) {
+  const t = TENANTS.find(x => x.slug === slug);
+  if (!t) return;
+  CURRENT_TENANT = t;
+  document.documentElement.style.setProperty('--accent', t.color);
+  document.documentElement.style.setProperty('--accent-d', t.color);
+  document.body.setAttribute('data-tenant-themed', '');
+  document.getElementById('tenant-name').textContent = t.name;
+  document.getElementById('tenant-dot').style.background = t.color;
+  toggleTenantMenu(true);
+  toast('Cambiaste a ' + t.name + ' · branding actualizado');
+}
+
+function toggleTenantMenu(forceClose) {
+  const m = document.getElementById('tenant-menu');
+  if (forceClose === true) { m.classList.add('hidden'); return; }
+  m.classList.toggle('hidden');
+  if (!m.classList.contains('hidden')) renderTenantList();
+}
+
+function renderTenantList() {
+  document.getElementById('tenant-list').innerHTML = TENANTS.map(t => `
+    <button onclick="switchTenant('${t.slug}')" class="w-full text-left px-3 py-2 rounded-xl text-sm hover:bg-bg flex items-center gap-2 ${t.slug===CURRENT_TENANT.slug?'bg-bg':''}">
+      <span class="w-5 h-5 rounded-full flex-shrink-0" style="background:${t.color}"></span>
+      <div class="flex-1 min-w-0">
+        <div class="font-semibold truncate">${t.name}</div>
+        <div class="text-[10px] text-muted truncate">${t.domain}</div>
+      </div>
+      ${t.slug===CURRENT_TENANT.slug ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+    </button>
+  `).join('');
+}
+
+document.addEventListener('click', (e) => {
+  const m = document.getElementById('tenant-menu');
+  const btn = document.getElementById('tenant-switcher-btn');
+  if (!m || !btn) return;
+  if (!m.classList.contains('hidden') && !m.contains(e.target) && !btn.contains(e.target)) m.classList.add('hidden');
+});
+
 /* ================== DATA ================== */
 const PRODUCTS = [
   // id, name, category, brand, size (display), pack_unit, pack_amount, default_dose, dose_unit, price, image_class, sku_label, popularity
@@ -2134,6 +2638,107 @@ function nav(name) {
   if (name === 'account') renderAccount();
   if (name === 'market') renderMarket();
   if (name === 'integrations') renderIntegrations();
+  if (name === 'platform') renderPlatform();
+  if (name === 'onboarding') renderOnboarding();
+}
+
+/* =================== PLATFORM (super admin) =================== */
+function renderPlatform() {
+  const grid = document.getElementById('tenants-grid');
+  grid.innerHTML = TENANTS.map(t => `
+    <div class="bg-bg border border-line rounded-2xl p-5 hover:border-lime/30 transition cursor-pointer" onclick="switchTenant('${t.slug}'); nav('admin');">
+      <div class="flex items-start justify-between mb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl flex items-center justify-center display font-bold text-bg text-lg flex-shrink-0" style="background:${t.color}">${t.name.charAt(0)}</div>
+          <div class="min-w-0">
+            <div class="font-semibold truncate">${t.name}</div>
+            <div class="text-[11px] text-muted truncate">${t.domain}</div>
+          </div>
+        </div>
+        ${t.status === 'active'
+          ? '<span class="chip chip-lime text-[10px] chip-dot">activo</span>'
+          : '<span class="chip text-[10px] bg-[#FFD245]/10 text-[#FFD245] border border-[#FFD245]/30 chip-dot">trial</span>'}
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
+        <div>
+          <div class="text-[10px] text-muted uppercase tracking-wider">MRR</div>
+          <div class="display text-xl font-bold num">$ ${(t.mrr/1000000).toFixed(2)}M</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-muted uppercase tracking-wider">Suscriptores</div>
+          <div class="display text-xl font-bold num">${t.subs.toLocaleString('es-AR')}</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-muted uppercase tracking-wider">Churn 30d</div>
+          <div class="num font-semibold ${t.churn > 5 ? 'text-ember' : t.churn > 3 ? 'text-[#FFD245]' : 'text-lime'}">${t.churn}%</div>
+        </div>
+        <div>
+          <div class="text-[10px] text-muted uppercase tracking-wider">Plan</div>
+          <div class="font-semibold">${t.plan} <span class="text-muted text-xs num">${t.planUsd ? '· $'+t.planUsd : '· gratis'}</span></div>
+        </div>
+      </div>
+      <div class="hr mb-3"></div>
+      <div class="flex items-center justify-between text-xs">
+        <span class="text-muted">desde ${t.since}</span>
+        <span class="text-lime font-semibold flex items-center gap-1">Entrar como tenant <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></span>
+      </div>
+    </div>
+  `).join('');
+
+  // Cross-tenant MRR chart
+  destroyChart('platform-mrr');
+  const ctx = document.getElementById('platform-mrr').getContext('2d');
+  CHARTS['platform-mrr'] = new Chart(ctx, {
+    type:'bar',
+    data: {
+      labels:['Dic','Ene','Feb','Mar','Abr','May'],
+      datasets:[
+        { label:'FitSupply',  data:[12, 13.5, 15, 16.4, 17.8, 19.42],   backgroundColor:'#C7FF3D', borderRadius:6, stack:'a' },
+        { label:'Tornado',    data:[0,  0,    0,  3.2,  5.4,  6.84],    backgroundColor:'#FF7A45', borderRadius:6, stack:'a' },
+        { label:'Iron Club',  data:[0,  0,    0,  0,    2.1,  4.18],    backgroundColor:'#9EC0FF', borderRadius:6, stack:'a' },
+        { label:'Vida Sana',  data:[0,  0,    0,  0,    0,    1.38],    backgroundColor:'#FFD245', borderRadius:6, stack:'a' }
+      ]
+    },
+    options:{
+      plugins:{legend:{position:'bottom', labels:{color:'#E8EAE3', boxWidth:10}}},
+      scales:{
+        x:{stacked:true, grid:{color:'#22251f44'}, ticks:{color:'#8A8F85'}},
+        y:{stacked:true, grid:{color:'#22251f44'}, ticks:{color:'#8A8F85', callback: v => '$'+v+'M'}}
+      }
+    }
+  });
+}
+
+/* =================== ONBOARDING WIZARD =================== */
+let ONBOARD_STEP = 1;
+
+function goStep(n) {
+  ONBOARD_STEP = n;
+  document.querySelectorAll('.onboard-page').forEach(p => p.classList.toggle('hidden', parseInt(p.dataset.page) !== n));
+  document.querySelectorAll('.onboard-step').forEach(s => {
+    const step = parseInt(s.dataset.step);
+    s.classList.toggle('opacity-50', step > n);
+    const bar = s.querySelector('div.h-1 > div');
+    if (bar) bar.style.width = step <= n ? '100%' : '0%';
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderOnboarding() { goStep(1); }
+
+function pickColor(color) {
+  document.querySelectorAll('button[data-color]').forEach(b => {
+    b.classList.toggle('ring-2', b.dataset.color === color);
+    b.classList.toggle('ring-lime', b.dataset.color === color);
+  });
+  document.getElementById('preview-logo').style.background = color;
+  document.getElementById('preview-dot').style.color = color;
+  document.getElementById('preview-cta').style.background = color;
+}
+
+function finishOnboarding() {
+  toast('🚀 Tornado Suplementos creada · live en tornado.fitsupply.cloud');
+  setTimeout(() => { switchTenant('tornado'); nav('platform'); }, 1200);
 }
 
 /* =================== MARKET RESEARCH =================== */
