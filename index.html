@@ -203,6 +203,7 @@ tailwind.config = {
       <a class="navlink" data-nav="account" onclick="nav('account')">Cuenta</a>
       <a class="navlink" data-nav="admin" onclick="nav('admin')">Admin</a>
       <a class="navlink" data-nav="platform" onclick="nav('platform')">Plataforma</a>
+      <a class="navlink" data-nav="marketplace" onclick="nav('marketplace')">Add-ons</a>
       <a class="navlink" data-nav="market" onclick="nav('market')">Mercado</a>
       <a class="navlink" data-nav="integrations" onclick="nav('integrations')">Stack</a>
     </nav>
@@ -388,7 +389,7 @@ tailwind.config = {
         </div>
         <div class="text-xs text-muted uppercase tracking-wider mb-1">Multitenant · super admin</div>
         <h3 class="display text-xl font-semibold mb-2">Plataforma</h3>
-        <p class="text-muted text-sm leading-relaxed">FitSupply OS: vista de todos los tenants. 4 tiendas demo (FitSupply, Tornado, Iron Club, Vida Sana).</p>
+        <p class="text-muted text-sm leading-relaxed">FitSupply OS: 4 tiendas demo. GMV consolidado, take rate por tier, top add-ons.</p>
         <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
       </a>
 
@@ -403,6 +404,20 @@ tailwind.config = {
         <div class="text-xs text-muted uppercase tracking-wider mb-1">Onboarding</div>
         <h3 class="display text-xl font-semibold mb-2">Crear tienda nueva</h3>
         <p class="text-muted text-sm leading-relaxed">Wizard de 5 pasos: negocio → branding → catálogo → integraciones → dominio.</p>
+        <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+      </a>
+
+      <a class="bg-bg2 border border-lime/30 rounded-3xl p-6 hover:border-lime/60 transition cursor-pointer block relative" onclick="nav('marketplace')">
+        <span class="chip chip-lime absolute top-5 right-5 text-[10px]">nuevo</span>
+        <div class="flex items-center justify-between mb-5">
+          <div class="w-11 h-11 rounded-xl bg-lime/10 ring-lime flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+          </div>
+          <span class="num text-muted text-xs">10</span>
+        </div>
+        <div class="text-xs text-muted uppercase tracking-wider mb-1">Billing · upsells</div>
+        <h3 class="display text-xl font-semibold mb-2">Add-ons Marketplace</h3>
+        <p class="text-muted text-sm leading-relaxed">15 features que el tenant compra a la carta: custom domain, white-label, WhatsApp bot, AI doses, BigQuery export.</p>
         <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
       </a>
 
@@ -1510,32 +1525,64 @@ tailwind.config = {
       </div>
     </div>
 
-    <!-- Platform KPIs -->
-    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
-      <div class="bg-bg2 border border-line rounded-2xl p-4">
-        <div class="text-[10px] text-muted uppercase tracking-wider">Tenants totales</div>
-        <div class="display text-3xl font-bold num">4</div>
-        <div class="text-xs text-muted mt-1">3 activos · 1 trial</div>
+    <!-- Platform KPIs · take rate based -->
+    <div class="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-5" id="platform-kpis"></div>
+
+    <!-- Revenue breakdown card -->
+    <div class="bg-bg2 border border-lime/30 rounded-3xl p-6 mb-5 relative overflow-hidden">
+      <div class="grid lg:grid-cols-12 gap-6 items-center">
+        <div class="lg:col-span-5">
+          <div class="text-xs text-muted uppercase tracking-wider mb-2">FitSupply OS revenue · este mes</div>
+          <div class="display text-5xl font-bold num text-lime" id="fs-os-total"></div>
+          <p class="text-muted text-sm mt-3">No cobramos SaaS mensual. Cobramos <span class="text-lime font-semibold">% sobre el GMV</span> + add-ons opcionales. El tenant paga solo cuando factura.</p>
+        </div>
+        <div class="lg:col-span-7 grid grid-cols-2 gap-3">
+          <div class="bg-bg border border-line rounded-2xl p-4">
+            <div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 rounded-full bg-lime"></span><span class="text-xs text-muted uppercase tracking-wider">Take del GMV</span></div>
+            <div class="display text-2xl font-bold num" id="take-ars"></div>
+            <div class="text-[11px] text-muted mt-1"><span id="take-blended"></span> blended · 4 tenants</div>
+          </div>
+          <div class="bg-bg border border-line rounded-2xl p-4">
+            <div class="flex items-center gap-2 mb-2"><span class="w-2 h-2 rounded-full bg-[#FF7A45]"></span><span class="text-xs text-muted uppercase tracking-wider">Add-ons activos</span></div>
+            <div class="display text-2xl font-bold num" id="addons-usd"></div>
+            <div class="text-[11px] text-muted mt-1"><span id="addons-count"></span> suscripciones · 14 disponibles</div>
+          </div>
+        </div>
       </div>
-      <div class="bg-bg2 border border-line rounded-2xl p-4">
-        <div class="text-[10px] text-muted uppercase tracking-wider">MRR consolidado</div>
-        <div class="display text-3xl font-bold num text-lime">$ 31.8M</div>
-        <div class="text-xs text-muted mt-1">ARS · +24% MoM</div>
+    </div>
+
+    <!-- Fee tiers visual -->
+    <div class="bg-bg2 border border-line rounded-3xl p-5 mb-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="display text-lg font-semibold">Tiers de take rate · cada tenant cae en uno según suscriptores activos</h3>
+        <button class="text-xs text-muted hover:text-lime">Editar tiers →</button>
       </div>
-      <div class="bg-bg2 border border-line rounded-2xl p-4">
-        <div class="text-[10px] text-muted uppercase tracking-wider">Suscriptores totales</div>
-        <div class="display text-3xl font-bold num">4.197</div>
-        <div class="text-xs text-muted mt-1">en los 4 tenants</div>
-      </div>
-      <div class="bg-bg2 border border-line rounded-2xl p-4">
-        <div class="text-[10px] text-muted uppercase tracking-wider">Envíos · esta semana</div>
-        <div class="display text-3xl font-bold num">1.428</div>
-        <div class="text-xs text-muted mt-1">across all tenants</div>
-      </div>
-      <div class="bg-bg2 border border-line rounded-2xl p-4">
-        <div class="text-[10px] text-muted uppercase tracking-wider">SaaS revenue (FS OS)</div>
-        <div class="display text-3xl font-bold num">US$ 1.046</div>
-        <div class="text-xs text-muted mt-1">2 Grow + 1 Scale</div>
+      <div class="grid grid-cols-4 gap-3">
+        <div class="bg-bg border border-line rounded-2xl p-4">
+          <div class="text-[10px] text-muted uppercase tracking-wider mb-1">Starter</div>
+          <div class="display text-2xl font-bold num">0%</div>
+          <div class="text-xs text-muted mt-1">0–50 suscriptores</div>
+          <div class="text-[10px] text-lime mt-2 font-semibold">1 tenant aquí</div>
+        </div>
+        <div class="bg-bg border border-line rounded-2xl p-4">
+          <div class="text-[10px] text-muted uppercase tracking-wider mb-1">Growth</div>
+          <div class="display text-2xl font-bold num">2.5%</div>
+          <div class="text-xs text-muted mt-1">51–500 suscriptores</div>
+          <div class="text-[10px] text-lime mt-2 font-semibold">1 tenant aquí</div>
+        </div>
+        <div class="bg-bg border-2 border-lime rounded-2xl p-4 relative">
+          <span class="chip chip-lime text-[9px] absolute top-2 right-2">populated</span>
+          <div class="text-[10px] text-muted uppercase tracking-wider mb-1">Scale</div>
+          <div class="display text-2xl font-bold num text-lime">2.0%</div>
+          <div class="text-xs text-muted mt-1">501–5.000 suscriptores</div>
+          <div class="text-[10px] text-lime mt-2 font-semibold">2 tenants aquí</div>
+        </div>
+        <div class="bg-bg border border-line rounded-2xl p-4">
+          <div class="text-[10px] text-muted uppercase tracking-wider mb-1">Enterprise</div>
+          <div class="display text-2xl font-bold num">1.5%</div>
+          <div class="text-xs text-muted mt-1">5.001+ · negociable</div>
+          <div class="text-[10px] text-muted mt-2">vacío</div>
+        </div>
       </div>
     </div>
 
@@ -1569,25 +1616,15 @@ tailwind.config = {
       <!-- Side: plans + recent events -->
       <div class="lg:col-span-4 space-y-4">
         <div class="bg-bg2 border border-line rounded-3xl p-6">
-          <h3 class="display text-xl font-semibold mb-4">Distribución por plan</h3>
-          <div class="space-y-3">
-            <div>
-              <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Scale</span><span class="num">1 tenant · US$ 449/mes</span></div>
-              <div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-lime" style="width:25%"></div></div>
-            </div>
-            <div>
-              <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Grow</span><span class="num">2 tenants · US$ 149/mes</span></div>
-              <div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-[#A6E512]" style="width:50%"></div></div>
-            </div>
-            <div>
-              <div class="flex justify-between text-sm mb-1"><span class="font-semibold">Seed</span><span class="num">1 tenant · gratis</span></div>
-              <div class="h-2 bg-line rounded-full overflow-hidden"><div class="h-full bg-[#9EC0FF]" style="width:25%"></div></div>
-            </div>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="display text-xl font-semibold">Top add-ons · adopción</h3>
+            <button onclick="nav('marketplace')" class="text-xs text-lime font-semibold">Ver catálogo →</button>
           </div>
+          <div class="space-y-3" id="platform-top-addons"></div>
           <div class="hr my-4"></div>
           <div class="grid grid-cols-2 gap-3 text-sm">
-            <div><div class="text-muted text-[10px] uppercase tracking-wider">ARPU SaaS</div><div class="num font-semibold">US$ 262</div></div>
-            <div><div class="text-muted text-[10px] uppercase tracking-wider">LTV target</div><div class="num font-semibold">US$ 4.7k</div></div>
+            <div><div class="text-muted text-[10px] uppercase tracking-wider">ARPU por tenant</div><div class="num font-semibold" id="kpi-arpu"></div></div>
+            <div><div class="text-muted text-[10px] uppercase tracking-wider">Add-ons take</div><div class="num font-semibold" id="kpi-addons-pct"></div></div>
           </div>
         </div>
 
@@ -1628,6 +1665,78 @@ create policy products_tenant
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ===================== ADD-ONS MARKETPLACE ===================== -->
+<section class="page" id="page-marketplace">
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-12">
+
+    <!-- Hero del marketplace -->
+    <div class="grid lg:grid-cols-12 gap-6 mb-10">
+      <div class="lg:col-span-7">
+        <div class="flex items-center gap-2 mb-4">
+          <span class="chip chip-lime">marketplace · 15 add-ons</span>
+          <span class="chip chip-mut">contexto: <span id="mp-tenant-name" class="ml-1 text-ink">FitSupply</span></span>
+        </div>
+        <h1 class="display text-4xl lg:text-6xl font-bold tracking-tight leading-[0.95]">Activá lo que necesitás,<br/><span class="text-lime">pagás solo eso.</span></h1>
+        <p class="text-muted mt-4 max-w-xl">No hay planes. El take rate del 0–2.5% sobre tus ventas cubre la plataforma base. Las features avanzadas son add-ons que activás cuando los necesitás.</p>
+      </div>
+      <div class="lg:col-span-5">
+        <div class="bg-bg2 border border-line rounded-3xl p-5">
+          <div class="text-xs text-muted uppercase tracking-wider mb-3">Tu cuenta en add-ons</div>
+          <div class="grid grid-cols-3 gap-3 text-center">
+            <div><div class="display text-2xl font-bold num text-lime" id="mp-active-count">5</div><div class="text-[10px] text-muted">activos</div></div>
+            <div><div class="display text-2xl font-bold num" id="mp-trial-count" style="color:#FFD245">1</div><div class="text-[10px] text-muted">en trial</div></div>
+            <div><div class="display text-2xl font-bold num" id="mp-spend">US$ 171</div><div class="text-[10px] text-muted">por mes</div></div>
+          </div>
+          <div class="hr my-4"></div>
+          <div class="text-xs text-muted mb-2">Próximos trials por vencer:</div>
+          <div class="space-y-1.5 text-xs" id="mp-trials-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros por categoría -->
+    <div class="flex items-center gap-2 mb-6 flex-wrap">
+      <div class="seg" id="mp-cat-tabs">
+        <button class="on" data-cat="all">Todos</button>
+        <button data-cat="Branding">Branding</button>
+        <button data-cat="Marketing">Marketing</button>
+        <button data-cat="Soporte">Soporte</button>
+        <button data-cat="Datos">Datos</button>
+        <button data-cat="Ops">Ops</button>
+        <button data-cat="Pagos">Pagos</button>
+      </div>
+      <div class="ml-auto text-xs text-muted">Cambiá de tenant en la top bar para ver qué tiene activo cada uno.</div>
+    </div>
+
+    <!-- Grid de add-ons -->
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3" id="mp-grid"></div>
+
+    <!-- Bottom: how billing works -->
+    <div class="bg-bg2 border border-line rounded-3xl p-8 mt-10">
+      <h3 class="display text-2xl font-semibold mb-2">Cómo funciona la facturación</h3>
+      <p class="text-muted text-sm mb-6">Sin sorpresas. Sin contratos largos.</p>
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="bg-bg border border-line rounded-2xl p-5">
+          <div class="num text-3xl text-lime font-bold mb-2">01</div>
+          <div class="font-semibold mb-1">Tomamos % del GMV</div>
+          <div class="text-muted text-sm">El día 1 de cada mes calculamos lo facturado el mes anterior y debitamos el take (Starter 0% · Growth 2.5% · Scale 2.0% · Enterprise 1.5%).</div>
+        </div>
+        <div class="bg-bg border border-line rounded-2xl p-5">
+          <div class="num text-3xl text-lime font-bold mb-2">02</div>
+          <div class="font-semibold mb-1">Add-ons cobrados aparte</div>
+          <div class="text-muted text-sm">Cada add-on tiene su propio billing mensual en USD. Activás hoy, te facturamos prorrateado el mes en curso.</div>
+        </div>
+        <div class="bg-bg border border-line rounded-2xl p-5">
+          <div class="num text-3xl text-lime font-bold mb-2">03</div>
+          <div class="font-semibold mb-1">Cancelás cualquiera, cuando sea</div>
+          <div class="text-muted text-sm">Un click. Sin retención. Si subiste de tier de take rate porque te fue bien, ese ajuste es transparente.</div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </section>
 
@@ -1833,11 +1942,12 @@ create policy products_tenant
       <div class="flex justify-between gap-2"><button class="btn-ghost" onclick="goStep(3)">← Anterior</button><button class="btn-primary" onclick="goStep(5)">Siguiente · Dominio →</button></div>
     </div>
 
-    <!-- Step 5: Dominio -->
+    <!-- Step 5: Dominio + take rate -->
     <div class="onboard-page hidden" data-page="5">
       <div class="bg-bg2 border border-line rounded-3xl p-8 mb-4">
-        <h2 class="display text-2xl font-semibold mb-1">¿Dónde va a vivir tu tienda?</h2>
-        <p class="text-muted text-sm mb-6">Empezá con el subdominio gratuito. Cuando estés listo agregás tu dominio.</p>
+        <h2 class="display text-2xl font-semibold mb-1">Último paso: dominio + cómo te cobramos</h2>
+        <p class="text-muted text-sm mb-6">Sin SaaS fee mensual. Cobramos % sobre el GMV una vez que empezás a facturar.</p>
+
         <div class="grid md:grid-cols-2 gap-3 mb-6">
           <div class="bg-bg border-2 border-lime rounded-2xl p-5">
             <div class="flex items-center justify-between mb-2"><div class="text-xs text-muted uppercase tracking-wider">Incluido</div><span class="chip chip-lime text-[10px]">listo ya</span></div>
@@ -1845,22 +1955,56 @@ create policy products_tenant
             <div class="text-muted text-xs">HTTPS automático · CDN global · sin configurar nada</div>
           </div>
           <div class="bg-bg border border-line rounded-2xl p-5">
-            <div class="flex items-center justify-between mb-2"><div class="text-xs text-muted uppercase tracking-wider">Custom domain</div><span class="chip chip-mut text-[10px]">Grow+</span></div>
+            <div class="flex items-center justify-between mb-2"><div class="text-xs text-muted uppercase tracking-wider">Custom domain</div><span class="chip chip-mut text-[10px]">add-on US$ 9/mes</span></div>
             <div class="display text-xl font-semibold mb-1">tienda.tornadosup.com.ar</div>
-            <div class="text-muted text-xs">Agregá un CNAME apuntando a edge.fitsupply.cloud</div>
+            <div class="text-muted text-xs">Activá cuando quieras desde Marketplace</div>
           </div>
         </div>
+
+        <!-- Take rate explainer -->
+        <div class="bg-bg border-2 border-lime rounded-2xl p-6 mb-6">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="chip chip-lime chip-dot">facturación</span>
+            <span class="text-sm font-semibold">Pagás cuando ganás · no antes</span>
+          </div>
+          <div class="grid grid-cols-4 gap-2 mb-4">
+            <div class="bg-bg2 border-2 border-lime rounded-xl p-3 text-center">
+              <div class="text-[10px] text-muted uppercase">arrancás acá</div>
+              <div class="display text-xl font-bold num text-lime">0%</div>
+              <div class="text-[10px] text-muted">0–50 subs</div>
+            </div>
+            <div class="bg-bg2 border border-line rounded-xl p-3 text-center">
+              <div class="text-[10px] text-muted uppercase">Growth</div>
+              <div class="display text-xl font-bold num">2.5%</div>
+              <div class="text-[10px] text-muted">51–500 subs</div>
+            </div>
+            <div class="bg-bg2 border border-line rounded-xl p-3 text-center">
+              <div class="text-[10px] text-muted uppercase">Scale</div>
+              <div class="display text-xl font-bold num">2.0%</div>
+              <div class="text-[10px] text-muted">501–5k subs</div>
+            </div>
+            <div class="bg-bg2 border border-line rounded-xl p-3 text-center">
+              <div class="text-[10px] text-muted uppercase">Enterprise</div>
+              <div class="display text-xl font-bold num">1.5%</div>
+              <div class="text-[10px] text-muted">5k+ subs</div>
+            </div>
+          </div>
+          <div class="text-xs text-muted leading-relaxed">
+            Empezás en <span class="text-lime font-semibold">Starter (0%)</span> hasta tus primeros 50 suscriptores. Cuando crezcas, el take rate se ajusta automáticamente. Add-ons opcionales (custom domain, white-label, AI doses, WhatsApp bot, etc.) se cobran aparte.
+          </div>
+        </div>
+
         <div class="bg-bg border border-line rounded-2xl p-5">
           <div class="text-xs text-muted uppercase tracking-wider mb-2">Resumen final</div>
           <div class="grid md:grid-cols-2 gap-3 text-sm">
             <div class="flex justify-between"><span class="text-muted">Tienda</span><span class="font-semibold">Tornado Suplementos</span></div>
             <div class="flex justify-between"><span class="text-muted">Slug</span><span class="num">tornado</span></div>
             <div class="flex justify-between"><span class="text-muted">Color primario</span><span class="flex items-center gap-1"><span class="w-3 h-3 rounded" style="background:#FF7A45"></span><span class="num">#FF7A45</span></span></div>
-            <div class="flex justify-between"><span class="text-muted">Catálogo</span><span class="num">18 SKUs</span></div>
+            <div class="flex justify-between"><span class="text-muted">Catálogo</span><span class="num">18 SKUs base</span></div>
             <div class="flex justify-between"><span class="text-muted">Pagos</span><span class="text-lime font-semibold">MercadoPago ✓</span></div>
             <div class="flex justify-between"><span class="text-muted">Logística</span><span class="text-lime font-semibold">Andreani ✓</span></div>
-            <div class="flex justify-between"><span class="text-muted">Plan</span><span class="font-semibold">Grow · US$ 149/mes</span></div>
-            <div class="flex justify-between"><span class="text-muted">Trial</span><span class="num">14 días</span></div>
+            <div class="flex justify-between"><span class="text-muted">Take rate inicial</span><span class="text-lime font-semibold">0% · Starter</span></div>
+            <div class="flex justify-between"><span class="text-muted">Add-ons</span><span class="num">0 activos</span></div>
           </div>
         </div>
       </div>
@@ -2479,12 +2623,75 @@ create policy products_tenant
 <!-- ===================== DATA + LOGIC ===================== -->
 <script>
 /* =================== TENANTS (multitenant demo) ================== */
+// Take rate por tamaño (matchea fee_tiers de la migration)
+function takeRateFor(subs) {
+  if (subs <= 50) return { tier:'Starter',    pct:0,    label:'Gratis' };
+  if (subs <= 500) return { tier:'Growth',    pct:2.5,  label:'2.5%' };
+  if (subs <= 5000) return { tier:'Scale',    pct:2.0,  label:'2.0%' };
+  return { tier:'Enterprise', pct:1.5, label:'1.5%' };
+}
+
 const TENANTS = [
-  { id:'11111111', slug:'fitsupply', name:'FitSupply',           color:'#C7FF3D', domain:'app.fitsupply.cloud',         plan:'Scale', planUsd:449, status:'active', subs:2831, mrr:19420000, churn:2.1, since:'feb 2026', headline:'Tu rutina de suplementos en piloto automático.' },
-  { id:'22222222', slug:'tornado',   name:'Tornado Suplementos', color:'#FF7A45', domain:'tienda.tornadosup.com.ar',    plan:'Grow',  planUsd:149, status:'active', subs:847,  mrr:6840000,  churn:3.4, since:'mar 2026', headline:'Recibí tus suplementos sin pensar.' },
-  { id:'33333333', slug:'ironclub',  name:'Iron Club Box',       color:'#9EC0FF', domain:'ironclub.fitsupply.cloud',    plan:'Grow',  planUsd:149, status:'active', subs:412,  mrr:4180000,  churn:4.8, since:'abr 2026', headline:'Iron Club Box · entrenamiento + nutrición.' },
-  { id:'44444444', slug:'vidasana',  name:'Vida Sana Pro',       color:'#FFD245', domain:'vidasana.fitsupply.cloud',    plan:'Seed',  planUsd:0,   status:'trial',  subs:107,  mrr:1380000,  churn:6.1, since:'may 2026', headline:'Suplementación natural por suscripción.' },
+  { id:'11111111', slug:'fitsupply', name:'FitSupply',           color:'#C7FF3D', domain:'app.fitsupply.cloud',         status:'active', subs:2831, gmv_mes:19420000, churn:2.1, since:'feb 2026', headline:'Tu rutina de suplementos en piloto automático.' },
+  { id:'22222222', slug:'tornado',   name:'Tornado Suplementos', color:'#FF7A45', domain:'tienda.tornadosup.com.ar',    status:'active', subs:847,  gmv_mes:6840000,  churn:3.4, since:'mar 2026', headline:'Recibí tus suplementos sin pensar.' },
+  { id:'33333333', slug:'ironclub',  name:'Iron Club Box',       color:'#9EC0FF', domain:'ironclub.fitsupply.cloud',    status:'active', subs:412,  gmv_mes:4180000,  churn:4.8, since:'abr 2026', headline:'Iron Club Box · entrenamiento + nutrición.' },
+  { id:'44444444', slug:'vidasana',  name:'Vida Sana Pro',       color:'#FFD245', domain:'vidasana.fitsupply.cloud',    status:'trial',  subs:107,  gmv_mes:1380000,  churn:6.1, since:'may 2026', headline:'Suplementación natural por suscripción.' },
 ];
+TENANTS.forEach(t => {
+  const tier = takeRateFor(t.subs);
+  t.tier = tier.tier;
+  t.take_pct = t.status === 'trial' ? 0 : tier.pct;
+  t.take_ars = Math.round(t.gmv_mes * t.take_pct / 100);
+});
+
+// Add-ons marketplace · precios USD/mes y feature_flag matchea SQL
+const ADDONS = [
+  { id:'custom_domain',    cat:'Branding',  name:'Custom domain',           usd:9,  trial:14, desc:'tienda.tumarca.com en vez de tumarca.fitsupply.cloud · SSL automático', icon:'🌐' },
+  { id:'white_label',      cat:'Branding',  name:'White-label',             usd:29, trial:14, desc:'Remueve "powered by FitSupply" de emails, portal del cliente y facturas', icon:'🏷️' },
+  { id:'custom_emails',    cat:'Branding',  name:'Editor de emails',        usd:12, trial:14, desc:'Editor visual para personalizar templates transaccionales', icon:'✉️' },
+  { id:'ab_testing',       cat:'Marketing', name:'A/B testing en planes',   usd:19, trial:14, desc:'Testeá pricing y bundles con tráfico real, ganador automático', icon:'🧪' },
+  { id:'referrals',        cat:'Marketing', name:'Programa de referidos',   usd:15, trial:14, desc:'Códigos de referido, comisiones automáticas, dashboard', icon:'🤝' },
+  { id:'email_flows',      cat:'Marketing', name:'Email flows avanzados',   usd:25, trial:14, desc:'Flows automatizados: bienvenida, recuperación de churn, upsell', icon:'📧' },
+  { id:'whatsapp_bot',     cat:'Soporte',   name:'WhatsApp automatizado',   usd:29, trial:14, desc:'Bot pre-armado: pausar, cambiar dosis, tracking por chat', icon:'💬' },
+  { id:'priority_support', cat:'Soporte',   name:'Slack priority',          usd:79, trial:14, desc:'Canal Slack compartido con nuestro team · SLA 4h', icon:'⚡' },
+  { id:'analytics_pro',    cat:'Datos',     name:'Analytics avanzado',      usd:25, trial:14, desc:'Dashboards estilo PostHog: cohortes, funnels, retención por SKU', icon:'📊' },
+  { id:'api_access',       cat:'Datos',     name:'API + webhooks',          usd:39, trial:14, desc:'REST API completa + webhooks de eventos · integraciones custom', icon:'🔌' },
+  { id:'bigquery_export',  cat:'Datos',     name:'Export a BigQuery',       usd:49, trial:14, desc:'Sync nightly de toda tu data a tu data warehouse', icon:'🗄️' },
+  { id:'multi_currency',   cat:'Ops',       name:'Multi-moneda',            usd:19, trial:14, desc:'Vendé en USD, CLP, UYU además de ARS · FX automático', icon:'💱' },
+  { id:'multi_warehouse',  cat:'Ops',       name:'Multi-depósito',          usd:25, trial:14, desc:'Stock en varios depósitos · ruteo de envíos optimizado', icon:'🏭' },
+  { id:'ai_doses',         cat:'Ops',       name:'AI dose recommendations', usd:39, trial:14, desc:'Sugerencias de dosis basadas en perfil del cliente · upsell automático', icon:'🤖' },
+  { id:'payway_cbu',       cat:'Pagos',     name:'Payway débito CBU',       usd:19, trial:14, desc:'Débito automático bancario · reduce churn por tarjeta vencida', icon:'🏦' },
+];
+
+// Qué add-on está activo / en trial para cada tenant (seed_addons.sql)
+const TENANT_ADDONS = {
+  'fitsupply': { active:['custom_domain','white_label','whatsapp_bot','analytics_pro','priority_support'], trial:['ai_doses'] },
+  'tornado':   { active:['custom_domain','whatsapp_bot'], trial:['referrals'] },
+  'ironclub':  { active:[], trial:['custom_emails'] },
+  'vidasana':  { active:[], trial:[] },
+};
+
+function tenantAddonState(tenantSlug, addonId) {
+  const t = TENANT_ADDONS[tenantSlug] || {active:[], trial:[]};
+  if (t.active.includes(addonId)) return 'active';
+  if (t.trial.includes(addonId)) return 'trial';
+  return 'off';
+}
+
+// Helpers de revenue de plataforma
+function platformRevenue() {
+  const take_ars = TENANTS.reduce((s,t) => s + t.take_ars, 0);
+  let addons_usd = 0;
+  TENANTS.forEach(t => {
+    const st = TENANT_ADDONS[t.slug];
+    if (!st) return;
+    st.active.forEach(aid => {
+      const a = ADDONS.find(x => x.id === aid);
+      if (a) addons_usd += a.usd;
+    });
+  });
+  return { take_ars, addons_usd, gmv_ars: TENANTS.reduce((s,t) => s + t.gmv_mes, 0) };
+}
 
 let CURRENT_TENANT = TENANTS[0];
 
@@ -2640,10 +2847,157 @@ function nav(name) {
   if (name === 'integrations') renderIntegrations();
   if (name === 'platform') renderPlatform();
   if (name === 'onboarding') renderOnboarding();
+  if (name === 'marketplace') renderMarketplace();
+}
+
+/* =================== ADD-ONS MARKETPLACE =================== */
+let MP_FILTER = 'all';
+function renderMarketplace() {
+  const st = TENANT_ADDONS[CURRENT_TENANT.slug] || {active:[], trial:[]};
+  document.getElementById('mp-tenant-name').textContent = CURRENT_TENANT.name;
+  document.getElementById('mp-active-count').textContent = st.active.length;
+  document.getElementById('mp-trial-count').textContent = st.trial.length;
+  const spend = st.active.reduce((s,id) => {
+    const a = ADDONS.find(x => x.id === id);
+    return s + (a ? a.usd : 0);
+  }, 0);
+  document.getElementById('mp-spend').textContent = 'US$ ' + spend;
+
+  const trials = document.getElementById('mp-trials-list');
+  if (st.trial.length === 0) {
+    trials.innerHTML = '<div class="text-muted text-xs italic">No hay trials activos.</div>';
+  } else {
+    trials.innerHTML = st.trial.map(id => {
+      const a = ADDONS.find(x => x.id === id);
+      return `<div class="flex items-center justify-between"><span>${a.icon} ${a.name}</span><span class="num text-[#FFD245]">${Math.floor(Math.random()*10+3)}d</span></div>`;
+    }).join('');
+  }
+
+  // tabs
+  document.querySelectorAll('#mp-cat-tabs button').forEach(b => {
+    b.classList.toggle('on', b.dataset.cat === MP_FILTER);
+    b.onclick = () => { MP_FILTER = b.dataset.cat; renderMarketplace(); };
+  });
+
+  const filtered = MP_FILTER === 'all' ? ADDONS : ADDONS.filter(a => a.cat === MP_FILTER);
+  document.getElementById('mp-grid').innerHTML = filtered.map(a => {
+    const state = tenantAddonState(CURRENT_TENANT.slug, a.id);
+    const stateBadge = state === 'active'
+      ? '<span class="chip chip-lime text-[10px] chip-dot">activo</span>'
+      : state === 'trial'
+      ? '<span class="chip text-[10px] bg-[#FFD245]/10 text-[#FFD245] border border-[#FFD245]/30 chip-dot">trial</span>'
+      : '';
+    const cta = state === 'active'
+      ? '<button class="btn-ghost text-xs py-1.5 px-3 w-full justify-center">Gestionar</button>'
+      : state === 'trial'
+      ? '<button class="btn-primary text-xs py-1.5 px-3 w-full justify-center">Comprar</button>'
+      : `<button class="btn-primary text-xs py-1.5 px-3 w-full justify-center" onclick="activateAddon('${a.id}')">Activar · ${a.trial} días gratis</button>`;
+    return `
+      <div class="bg-bg2 border border-line rounded-2xl p-5 hover:border-lime/30 transition flex flex-col">
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="w-10 h-10 rounded-xl bg-bg border border-line flex items-center justify-center text-xl">${a.icon}</div>
+            <span class="chip chip-mut text-[10px]">${a.cat}</span>
+          </div>
+          ${stateBadge}
+        </div>
+        <h4 class="display text-lg font-semibold mb-1">${a.name}</h4>
+        <p class="text-muted text-sm leading-relaxed mb-4 flex-1">${a.desc}</p>
+        <div class="flex items-end justify-between mb-3">
+          <div>
+            <div class="display text-2xl font-bold num">US$ ${a.usd}<span class="text-muted text-xs font-normal">/mes</span></div>
+            <div class="text-[10px] text-muted">~ AR$ ${(a.usd*1200).toLocaleString('es-AR')}</div>
+          </div>
+        </div>
+        ${cta}
+      </div>
+    `;
+  }).join('');
+}
+
+function activateAddon(id) {
+  const slug = CURRENT_TENANT.slug;
+  if (!TENANT_ADDONS[slug]) TENANT_ADDONS[slug] = {active:[], trial:[]};
+  TENANT_ADDONS[slug].trial.push(id);
+  const a = ADDONS.find(x => x.id === id);
+  toast('🎉 Trial de ' + a.name + ' activado · 14 días gratis');
+  renderMarketplace();
 }
 
 /* =================== PLATFORM (super admin) =================== */
 function renderPlatform() {
+  // KPIs
+  const rev = platformRevenue();
+  const totalSubs = TENANTS.reduce((s,t)=>s+t.subs, 0);
+  const billing = TENANTS.filter(t=>t.take_ars>0).length;
+  const takeUsd = rev.take_ars / 1200;
+  const totalUsd = takeUsd + rev.addons_usd;
+  const blended = (rev.take_ars / rev.gmv_ars * 100).toFixed(2);
+
+  document.getElementById('platform-kpis').innerHTML = `
+    <div class="bg-bg2 border border-line rounded-2xl p-4">
+      <div class="text-[10px] text-muted uppercase tracking-wider">Tenants</div>
+      <div class="display text-3xl font-bold num">4</div>
+      <div class="text-xs text-muted mt-1">3 activos · 1 trial</div>
+    </div>
+    <div class="bg-bg2 border border-line rounded-2xl p-4">
+      <div class="text-[10px] text-muted uppercase tracking-wider">GMV consolidado</div>
+      <div class="display text-3xl font-bold num">$ ${(rev.gmv_ars/1000000).toFixed(1)}M</div>
+      <div class="text-xs text-muted mt-1">ARS · sum 4 tenants</div>
+    </div>
+    <div class="bg-bg2 border border-line rounded-2xl p-4">
+      <div class="text-[10px] text-muted uppercase tracking-wider">Suscriptores</div>
+      <div class="display text-3xl font-bold num">${totalSubs.toLocaleString('es-AR')}</div>
+      <div class="text-xs text-muted mt-1">en los 4 tenants</div>
+    </div>
+    <div class="bg-bg2 border border-line rounded-2xl p-4">
+      <div class="text-[10px] text-muted uppercase tracking-wider">Envíos · semana</div>
+      <div class="display text-3xl font-bold num">1.428</div>
+      <div class="text-xs text-muted mt-1">across tenants</div>
+    </div>
+    <div class="bg-bg2 border border-lime/40 rounded-2xl p-4">
+      <div class="text-[10px] text-muted uppercase tracking-wider">FS OS · take</div>
+      <div class="display text-3xl font-bold num text-lime">$ ${(rev.take_ars/1000).toFixed(0)}k</div>
+      <div class="text-xs text-muted mt-1">ARS · ${blended}% blended</div>
+    </div>
+    <div class="bg-bg2 border border-[#FF7A45]/40 rounded-2xl p-4">
+      <div class="text-[10px] text-muted uppercase tracking-wider">Add-ons MRR</div>
+      <div class="display text-3xl font-bold num" style="color:#FF7A45">US$ ${rev.addons_usd}</div>
+      <div class="text-xs text-muted mt-1">${billing+1} suscripciones activas</div>
+    </div>
+  `;
+
+  document.getElementById('fs-os-total').textContent = 'US$ ' + Math.round(totalUsd).toLocaleString('es-AR');
+  document.getElementById('take-ars').textContent = '$ ' + (rev.take_ars/1000).toFixed(0) + 'k ARS';
+  document.getElementById('take-blended').textContent = blended + '%';
+  document.getElementById('addons-usd').textContent = 'US$ ' + rev.addons_usd;
+  document.getElementById('addons-count').textContent = TENANTS.reduce((s,t)=>s+(TENANT_ADDONS[t.slug]?.active.length||0),0);
+  document.getElementById('kpi-arpu').textContent = 'US$ ' + Math.round(totalUsd/4);
+  document.getElementById('kpi-addons-pct').textContent = Math.round(rev.addons_usd/totalUsd*100) + '%';
+
+  // Top add-ons by adoption
+  const adoption = ADDONS.map(a => {
+    let active=0, trial=0;
+    Object.values(TENANT_ADDONS).forEach(s => { if(s.active.includes(a.id)) active++; if(s.trial.includes(a.id)) trial++; });
+    return { ...a, active, trial };
+  }).filter(a => a.active+a.trial > 0).sort((a,b)=>(b.active+b.trial)-(a.active+a.trial)).slice(0,5);
+
+  document.getElementById('platform-top-addons').innerHTML = adoption.map(a => `
+    <div>
+      <div class="flex justify-between text-sm mb-1">
+        <span class="flex items-center gap-2"><span>${a.icon}</span><span class="font-semibold">${a.name}</span></span>
+        <span class="num text-xs text-muted">US$ ${a.usd}/mes</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="flex-1 h-2 bg-line rounded-full overflow-hidden flex">
+          <div class="h-full bg-lime" style="width:${a.active/4*100}%"></div>
+          <div class="h-full bg-[#FFD245]" style="width:${a.trial/4*100}%"></div>
+        </div>
+        <span class="num text-xs text-muted w-12 text-right">${a.active}+${a.trial}/4</span>
+      </div>
+    </div>
+  `).join('');
+
   const grid = document.getElementById('tenants-grid');
   grid.innerHTML = TENANTS.map(t => `
     <div class="bg-bg border border-line rounded-2xl p-5 hover:border-lime/30 transition cursor-pointer" onclick="switchTenant('${t.slug}'); nav('admin');">
@@ -2661,20 +3015,20 @@ function renderPlatform() {
       </div>
       <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
         <div>
-          <div class="text-[10px] text-muted uppercase tracking-wider">MRR</div>
-          <div class="display text-xl font-bold num">$ ${(t.mrr/1000000).toFixed(2)}M</div>
+          <div class="text-[10px] text-muted uppercase tracking-wider">GMV mes</div>
+          <div class="display text-xl font-bold num">$ ${(t.gmv_mes/1000000).toFixed(2)}M</div>
         </div>
         <div>
           <div class="text-[10px] text-muted uppercase tracking-wider">Suscriptores</div>
           <div class="display text-xl font-bold num">${t.subs.toLocaleString('es-AR')}</div>
         </div>
         <div>
-          <div class="text-[10px] text-muted uppercase tracking-wider">Churn 30d</div>
-          <div class="num font-semibold ${t.churn > 5 ? 'text-ember' : t.churn > 3 ? 'text-[#FFD245]' : 'text-lime'}">${t.churn}%</div>
+          <div class="text-[10px] text-muted uppercase tracking-wider">Tier · take</div>
+          <div class="font-semibold">${t.tier} <span class="text-lime num text-xs">· ${t.take_pct}%</span></div>
         </div>
         <div>
-          <div class="text-[10px] text-muted uppercase tracking-wider">Plan</div>
-          <div class="font-semibold">${t.plan} <span class="text-muted text-xs num">${t.planUsd ? '· $'+t.planUsd : '· gratis'}</span></div>
+          <div class="text-[10px] text-muted uppercase tracking-wider">Cobramos / mes</div>
+          <div class="num font-semibold text-lime">${t.take_ars === 0 ? '—' : '$ '+(t.take_ars/1000).toFixed(0)+'k'}</div>
         </div>
       </div>
       <div class="hr mb-3"></div>
