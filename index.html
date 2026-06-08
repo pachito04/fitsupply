@@ -203,6 +203,7 @@ tailwind.config = {
       <a class="navlink" data-nav="account" onclick="nav('account')">Cuenta</a>
       <a class="navlink" data-nav="admin" onclick="nav('admin')">Admin</a>
       <a class="navlink" data-nav="platform" onclick="nav('platform')">Plataforma</a>
+      <a class="navlink" data-nav="experiments" onclick="nav('experiments')">Experimentos</a>
       <a class="navlink" data-nav="marketplace" onclick="nav('marketplace')">Add-ons</a>
       <a class="navlink" data-nav="market" onclick="nav('market')">Mercado</a>
       <a class="navlink" data-nav="integrations" onclick="nav('integrations')">Stack</a>
@@ -407,13 +408,27 @@ tailwind.config = {
         <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
       </a>
 
+      <a class="bg-bg2 border border-lime/30 rounded-3xl p-6 hover:border-lime/60 transition cursor-pointer block relative" onclick="nav('experiments')">
+        <span class="chip chip-lime absolute top-5 right-5 text-[10px]">nuevo</span>
+        <div class="flex items-center justify-between mb-5">
+          <div class="w-11 h-11 rounded-xl bg-lime/10 ring-lime flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><path d="M10 2v7l-5 8a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-8V2"/><path d="M8 2h8"/></svg>
+          </div>
+          <span class="num text-muted text-xs">10</span>
+        </div>
+        <div class="text-xs text-muted uppercase tracking-wider mb-1">AI A/B testing</div>
+        <h3 class="display text-xl font-semibold mb-2">Experimentos</h3>
+        <p class="text-muted text-sm leading-relaxed">Describís qué probar, Claude genera 2 variantes, PostHog mide significancia. Add-on US$ 39/mes.</p>
+        <div class="flex items-center gap-2 mt-5 text-sm text-lime font-semibold">Entrar <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div>
+      </a>
+
       <a class="bg-bg2 border border-lime/30 rounded-3xl p-6 hover:border-lime/60 transition cursor-pointer block relative" onclick="nav('marketplace')">
         <span class="chip chip-lime absolute top-5 right-5 text-[10px]">nuevo</span>
         <div class="flex items-center justify-between mb-5">
           <div class="w-11 h-11 rounded-xl bg-lime/10 ring-lime flex items-center justify-center">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C7FF3D" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
           </div>
-          <span class="num text-muted text-xs">10</span>
+          <span class="num text-muted text-xs">11</span>
         </div>
         <div class="text-xs text-muted uppercase tracking-wider mb-1">Billing · upsells</div>
         <h3 class="display text-xl font-semibold mb-2">Add-ons Marketplace</h3>
@@ -1668,6 +1683,347 @@ create policy products_tenant
   </div>
 </section>
 
+<!-- ===================== EXPERIMENTS (AI A/B Testing) ===================== -->
+<section class="page" id="page-experiments">
+  <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-12">
+
+    <!-- Top -->
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-5 mb-8">
+      <div>
+        <div class="flex items-center gap-2 mb-3">
+          <span class="chip chip-lime chip-dot pulse-dot">3 experimentos corriendo</span>
+          <span class="chip chip-mut">add-on · AI A/B Testing · US$ 39/mes</span>
+        </div>
+        <h1 class="display text-4xl lg:text-5xl font-bold tracking-tight leading-[0.95]">Experimentos.</h1>
+        <p class="text-muted mt-2 max-w-2xl">Describí qué querés probar. Claude genera 2 variantes. PostHog las sirve y calcula significancia. Vos decidís el ganador.</p>
+      </div>
+      <button class="btn-primary" onclick="openExperimentWizard()">
+        + Nuevo experimento
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+      <div class="bg-bg2 border border-line rounded-2xl p-4">
+        <div class="text-[10px] text-muted uppercase tracking-wider">Activos</div>
+        <div class="display text-3xl font-bold num text-lime">2</div>
+        <div class="text-xs text-muted mt-1">corriendo ahora</div>
+      </div>
+      <div class="bg-bg2 border border-line rounded-2xl p-4">
+        <div class="text-[10px] text-muted uppercase tracking-wider">Visitantes en test</div>
+        <div class="display text-3xl font-bold num">12.403</div>
+        <div class="text-xs text-muted mt-1">últimos 30 días</div>
+      </div>
+      <div class="bg-bg2 border border-line rounded-2xl p-4">
+        <div class="text-[10px] text-muted uppercase tracking-wider">Ganadores · 30d</div>
+        <div class="display text-3xl font-bold num">4</div>
+        <div class="text-xs text-muted mt-1">promovidos a default</div>
+      </div>
+      <div class="bg-bg2 border border-line rounded-2xl p-4">
+        <div class="text-[10px] text-muted uppercase tracking-wider">Lift acumulado</div>
+        <div class="display text-3xl font-bold num text-lime">+18.7%</div>
+        <div class="text-xs text-muted mt-1">conversion vs baseline</div>
+      </div>
+      <div class="bg-bg2 border border-line rounded-2xl p-4">
+        <div class="text-[10px] text-muted uppercase tracking-wider">$ generado</div>
+        <div class="display text-3xl font-bold num">$ 2.4M</div>
+        <div class="text-xs text-muted mt-1">ARS · revenue incremental</div>
+      </div>
+    </div>
+
+    <!-- Wizard panel (oculto inicial) -->
+    <div id="exp-wizard" class="hidden bg-bg2 border-2 border-lime rounded-3xl p-7 mb-5 glow">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <div class="text-xs text-lime uppercase tracking-wider">Nuevo experimento · paso <span id="ew-step">1</span> de 3</div>
+          <h3 class="display text-2xl font-semibold mt-1" id="ew-title">Describí qué querés probar</h3>
+        </div>
+        <button class="text-muted text-sm" onclick="closeExperimentWizard()">Cerrar ✕</button>
+      </div>
+
+      <!-- Step 1: prompt -->
+      <div id="ew-1" class="ew-step">
+        <p class="text-muted text-sm mb-4">Escribí en español lo que querés probar. Mientras más concreto, mejor.</p>
+        <textarea id="ew-prompt" rows="4" class="w-full bg-bg border border-line rounded-2xl p-4 text-sm focus:outline-none focus:border-lime/50 mb-4" placeholder="Ej: Quiero testear dos versiones del hero de la landing — una más argentina con 'no renegues más con comprar' y otra con 'piloto automático'.">Quiero probar dos copys para el hero de la landing. Una versión más argentina con tono coloquial y otra más aspiracional.</textarea>
+        <div class="grid md:grid-cols-3 gap-3 mb-5">
+          <label class="block">
+            <span class="text-xs text-muted uppercase tracking-wider">¿Qué pantalla?</span>
+            <select class="mt-1 w-full bg-bg border border-line rounded-xl px-3 py-2.5 text-sm">
+              <option>Landing · Hero</option>
+              <option>Catálogo</option>
+              <option>Plan Builder</option>
+              <option>Checkout</option>
+              <option>Email de bienvenida</option>
+              <option>Página de precios</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="text-xs text-muted uppercase tracking-wider">Métrica de éxito</span>
+            <select class="mt-1 w-full bg-bg border border-line rounded-xl px-3 py-2.5 text-sm">
+              <option>Suscripciones nuevas</option>
+              <option>Add to plan</option>
+              <option>Signup</option>
+              <option>Revenue por visita</option>
+              <option>Retención 30d</option>
+            </select>
+          </label>
+          <label class="block">
+            <span class="text-xs text-muted uppercase tracking-wider">% del tráfico al experimento</span>
+            <select class="mt-1 w-full bg-bg border border-line rounded-xl px-3 py-2.5 text-sm">
+              <option>100%</option><option>80%</option><option>50%</option><option>20%</option>
+            </select>
+          </label>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button class="btn-ghost text-sm" onclick="closeExperimentWizard()">Cancelar</button>
+          <button class="btn-primary text-sm" onclick="ewGenerate()">
+            ✨ Generar variantes con Claude
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: AI generated variants -->
+      <div id="ew-2" class="ew-step hidden">
+        <div class="flex items-center gap-2 mb-4 text-sm">
+          <div class="w-8 h-8 rounded-lg bg-lime/10 flex items-center justify-center"><span class="text-lime">✨</span></div>
+          <div><div class="font-semibold">Claude analizó tu prompt y generó 2 variantes</div><div class="text-muted text-xs">Podés editarlas antes de publicar</div></div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3 mb-5">
+          <div class="bg-bg border-2 border-line rounded-2xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="chip chip-mut text-[10px]">CONTROL · A</span>
+              <span class="num text-xs text-muted">peso 50%</span>
+            </div>
+            <div class="text-xs text-muted uppercase tracking-wider mb-1">Headline</div>
+            <input value="Tu rutina de suplementos en piloto automático." class="w-full bg-bg2 border border-line rounded-lg px-3 py-2 text-sm mb-3"/>
+            <div class="text-xs text-muted uppercase tracking-wider mb-1">CTA</div>
+            <input value="Armá tu plan" class="w-full bg-bg2 border border-line rounded-lg px-3 py-2 text-sm mb-3"/>
+            <div class="bg-bg2 rounded-xl p-4 border border-line">
+              <div class="display font-bold text-lg leading-tight mb-2">Tu rutina de suplementos en piloto automático.</div>
+              <button class="btn-primary text-[11px] py-1.5 px-3">Armá tu plan →</button>
+            </div>
+          </div>
+          <div class="bg-bg border-2 border-lime rounded-2xl p-5 relative">
+            <span class="chip chip-lime absolute top-3 right-3 text-[10px]">generado por Claude</span>
+            <div class="flex items-center justify-between mb-3">
+              <span class="chip chip-lime text-[10px]">VARIANTE B</span>
+              <span class="num text-xs text-muted">peso 50%</span>
+            </div>
+            <div class="text-xs text-muted uppercase tracking-wider mb-1">Headline</div>
+            <input value="No renegues más con comprar suplementos." class="w-full bg-bg2 border border-line rounded-lg px-3 py-2 text-sm mb-3"/>
+            <div class="text-xs text-muted uppercase tracking-wider mb-1">CTA</div>
+            <input value="Quiero el mío" class="w-full bg-bg2 border border-line rounded-lg px-3 py-2 text-sm mb-3"/>
+            <div class="bg-bg2 rounded-xl p-4 border border-line">
+              <div class="display font-bold text-lg leading-tight mb-2">No renegues más con comprar suplementos.</div>
+              <button class="btn-primary text-[11px] py-1.5 px-3">Quiero el mío →</button>
+            </div>
+          </div>
+        </div>
+        <div class="bg-bg border border-line rounded-2xl p-4 mb-5 text-xs">
+          <div class="text-muted mb-1 uppercase tracking-wider text-[10px]">Razonamiento de Claude</div>
+          <p class="leading-relaxed">La variante B usa "renegar" — un verbo argentino con carga emocional directa que resuena con el insight original del founder ("me apaja la logística"). Hipótesis: convertirá entre 8–20% más que la variante neutral "piloto automático".</p>
+        </div>
+        <div class="flex justify-between">
+          <button class="btn-ghost text-sm" onclick="ewBack(1)">← Volver</button>
+          <div class="flex gap-2">
+            <button class="btn-ghost text-sm">🎲 Regenerar</button>
+            <button class="btn-primary text-sm" onclick="ewBack(3)">Publicar experimento →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: confirm + publish -->
+      <div id="ew-3" class="ew-step hidden">
+        <div class="grid lg:grid-cols-2 gap-4 mb-5">
+          <div class="bg-bg border border-line rounded-2xl p-5">
+            <div class="text-xs text-muted uppercase tracking-wider mb-3">Resumen</div>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between"><span class="text-muted">Nombre</span><span class="font-semibold">Hero · piloto vs renegar v2</span></div>
+              <div class="flex justify-between"><span class="text-muted">Pantalla</span><span>Landing · Hero</span></div>
+              <div class="flex justify-between"><span class="text-muted">Métrica</span><span>Suscripciones nuevas</span></div>
+              <div class="flex justify-between"><span class="text-muted">Tráfico</span><span class="num">100%</span></div>
+              <div class="flex justify-between"><span class="text-muted">Split</span><span class="num">50/50</span></div>
+              <div class="flex justify-between"><span class="text-muted">Muestra mínima</span><span class="num">500 por variante</span></div>
+              <div class="flex justify-between"><span class="text-muted">Significancia</span><span class="num">95%</span></div>
+            </div>
+          </div>
+          <div class="bg-bg border border-line rounded-2xl p-5">
+            <div class="text-xs text-muted uppercase tracking-wider mb-3">Backend</div>
+            <div class="space-y-2 text-xs font-mono">
+              <div class="flex items-center gap-2"><span class="text-lime">✓</span> PostHog flag <span class="text-muted">hero_copy_2026_06</span></div>
+              <div class="flex items-center gap-2"><span class="text-lime">✓</span> Variante control + variante B registradas</div>
+              <div class="flex items-center gap-2"><span class="text-lime">✓</span> Métrica subscribe linked</div>
+              <div class="flex items-center gap-2"><span class="text-lime">✓</span> Webhook PostHog → FS OS para sync</div>
+              <div class="flex items-center gap-2"><span class="text-lime">✓</span> Sample asignment vía cookie estable</div>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-between">
+          <button class="btn-ghost text-sm" onclick="ewBack(2)">← Volver</button>
+          <button class="btn-primary text-sm py-3 px-6" onclick="ewPublish()">🚀 Publicar y empezar a medir</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active experiments -->
+    <div class="bg-bg2 border border-line rounded-3xl p-6 mb-4">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="display text-xl font-semibold">Corriendo ahora · 2 experimentos</h3>
+        <div class="seg"><button class="on">Activos</button><button>Completados</button><button>Borradores</button><button>Todos</button></div>
+      </div>
+
+      <!-- Exp 1 -->
+      <div class="bg-bg border border-line rounded-2xl p-5 mb-3">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="chip chip-lime text-[10px] chip-dot pulse-dot">corriendo</span>
+              <span class="chip chip-mut text-[10px]">Landing · Hero</span>
+              <span class="text-xs text-muted num">día 6 de ~10</span>
+            </div>
+            <h4 class="display text-lg font-semibold">Hero copy · piloto vs renegar</h4>
+            <p class="text-muted text-xs mt-1">Hipótesis: "no renegar" conecta más con la voz AR del founder</p>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-muted">significancia</div>
+            <div class="num font-semibold text-lime">94.2%</div>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3 mb-3">
+          <div class="bg-bg2 rounded-xl p-3 border border-line">
+            <div class="flex items-center justify-between mb-2"><span class="chip chip-mut text-[10px]">A · control</span><span class="text-[10px] text-muted num">4.128 vistas</span></div>
+            <div class="text-sm font-semibold mb-2 truncate">"Piloto automático"</div>
+            <div class="flex items-end justify-between">
+              <div><div class="text-[10px] text-muted">conv rate</div><div class="display text-xl font-bold num">4.46%</div></div>
+              <div class="text-right"><div class="text-[10px] text-muted">revenue</div><div class="num text-xs">$ 8.81M</div></div>
+            </div>
+          </div>
+          <div class="bg-bg2 rounded-xl p-3 border-2 border-lime">
+            <div class="flex items-center justify-between mb-2"><span class="chip chip-lime text-[10px]">B · ganando</span><span class="text-[10px] text-muted num">4.082 vistas</span></div>
+            <div class="text-sm font-semibold mb-2 truncate">"No renegar"</div>
+            <div class="flex items-end justify-between">
+              <div><div class="text-[10px] text-muted">conv rate</div><div class="display text-xl font-bold num text-lime">5.54% <span class="text-xs">↑24%</span></div></div>
+              <div class="text-right"><div class="text-[10px] text-muted">revenue</div><div class="num text-xs text-lime">$ 10.82M</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="h-1.5 bg-line rounded-full overflow-hidden mb-2"><div class="h-full bg-lime" style="width:94%"></div></div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-muted">94% significancia · falta poco</span>
+          <div class="flex gap-2">
+            <button class="text-muted hover:text-ink">Pausar</button>
+            <button class="text-lime font-semibold">Declarar B como ganadora →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Exp 2 -->
+      <div class="bg-bg border border-line rounded-2xl p-5">
+        <div class="flex items-start justify-between mb-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="chip chip-lime text-[10px] chip-dot pulse-dot">corriendo</span>
+              <span class="chip chip-mut text-[10px]">Pricing</span>
+              <span class="text-xs text-muted num">día 11 de ~14</span>
+            </div>
+            <h4 class="display text-lg font-semibold">Precio Stack · $47k vs $54k</h4>
+            <p class="text-muted text-xs mt-1">Hipótesis: subir 15% no afecta conversion</p>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-muted">significancia</div>
+            <div class="num font-semibold" style="color:#FFD245">67.1%</div>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3 mb-3">
+          <div class="bg-bg2 rounded-xl p-3 border border-line">
+            <div class="flex items-center justify-between mb-2"><span class="chip chip-mut text-[10px]">A · control</span><span class="text-[10px] text-muted num">2.104 vistas</span></div>
+            <div class="text-sm font-semibold mb-2 num">AR$ 47.890</div>
+            <div class="flex items-end justify-between">
+              <div><div class="text-[10px] text-muted">conv rate</div><div class="display text-xl font-bold num">8.46%</div></div>
+              <div class="text-right"><div class="text-[10px] text-muted">revenue</div><div class="num text-xs">$ 8.53M</div></div>
+            </div>
+          </div>
+          <div class="bg-bg2 rounded-xl p-3 border border-line">
+            <div class="flex items-center justify-between mb-2"><span class="chip chip-mut text-[10px]">B</span><span class="text-[10px] text-muted num">2.089 vistas</span></div>
+            <div class="text-sm font-semibold mb-2 num">AR$ 54.890</div>
+            <div class="flex items-end justify-between">
+              <div><div class="text-[10px] text-muted">conv rate</div><div class="display text-xl font-bold num">8.23%</div></div>
+              <div class="text-right"><div class="text-[10px] text-muted">revenue</div><div class="num text-xs text-lime">$ 9.44M ↑11%</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="h-1.5 bg-line rounded-full overflow-hidden mb-2"><div class="h-full" style="width:67%; background:#FFD245"></div></div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-muted">67% significancia · no concluyente aún</span>
+          <div class="flex gap-2">
+            <button class="text-muted hover:text-ink">Detalle</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Completed example -->
+    <div class="bg-bg2 border border-line rounded-3xl p-6 mb-4">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="display text-xl font-semibold">Recientemente completados</h3>
+      </div>
+      <div class="bg-bg border border-line rounded-2xl p-5">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="chip chip-lime text-[10px]">✓ ganador promovido</span>
+              <span class="chip chip-mut text-[10px]">Plan Builder</span>
+              <span class="text-xs text-muted num">terminó hace 3 días</span>
+            </div>
+            <h4 class="display text-lg font-semibold">Slider vs dropdown para elegir dosis</h4>
+            <p class="text-muted text-xs mt-1">Decisión: Slider gana con 25% más de add_to_plan rate · p &lt; 0.001</p>
+          </div>
+          <div class="text-right">
+            <div class="text-xs text-muted">lift final</div>
+            <div class="display text-2xl font-bold num text-lime">+25%</div>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-2 gap-3 text-xs">
+          <div class="bg-bg2 rounded-lg p-3 border border-line"><div class="flex items-center justify-between mb-1"><span class="chip chip-mut text-[9px]">Dropdown</span><span class="num">6.204 vistas</span></div><div class="num">17.86% conv</div></div>
+          <div class="bg-bg2 rounded-lg p-3 border-2 border-lime"><div class="flex items-center justify-between mb-1"><span class="chip chip-lime text-[9px]">Slider ✓</span><span class="num">6.189 vistas</span></div><div class="num text-lime">25.00% conv</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Architecture -->
+    <div class="bg-bg2 border border-line rounded-3xl p-6">
+      <h3 class="display text-xl font-semibold mb-2">Cómo funciona por detrás</h3>
+      <p class="text-muted text-sm mb-5">3 piezas combinadas — ninguna sola alcanza.</p>
+      <div class="grid md:grid-cols-3 gap-3">
+        <div class="bg-bg border border-line rounded-2xl p-5 border-t-4 border-t-lime">
+          <div class="num text-xl text-lime font-bold mb-2">01</div>
+          <div class="font-semibold mb-1">Claude API genera variantes</div>
+          <div class="text-muted text-sm">Tu prompt en español → 2 variantes con copy + props del componente. Editás antes de publicar.</div>
+          <div class="text-[10px] num text-muted mt-3">anthropic.com · claude-sonnet-4</div>
+        </div>
+        <div class="bg-bg border border-line rounded-2xl p-5 border-t-4 border-t-lime">
+          <div class="num text-xl text-lime font-bold mb-2">02</div>
+          <div class="font-semibold mb-1">PostHog asigna y mide</div>
+          <div class="text-muted text-sm">Feature flag por visitor (cookie estable). PostHog calcula significancia bayesiana automática.</div>
+          <div class="text-[10px] num text-muted mt-3">posthog.com · 1M eventos free</div>
+        </div>
+        <div class="bg-bg border border-line rounded-2xl p-5 border-t-4 border-t-lime">
+          <div class="num text-xl text-lime font-bold mb-2">03</div>
+          <div class="font-semibold mb-1">FS OS te muestra y decide</div>
+          <div class="text-muted text-sm">Dashboard nativo en tu idioma. "Declarar ganadora" promueve la variante con un click vía API.</div>
+          <div class="text-[10px] num text-muted mt-3">fitsupply.cloud · build propio</div>
+        </div>
+      </div>
+      <div class="bg-bg border border-line rounded-xl p-4 mt-4 text-xs">
+        <div class="text-muted mb-1 uppercase tracking-wider text-[10px]">¿Por qué no usar Claude Code o Shopify?</div>
+        <p class="leading-relaxed">Claude Code es dev tool, no corre en producción. Shopify A/B solo en Plus (US$ 2k/mes) y no aplica acá. PostHog es lo que está en nuestro stack y tiene el motor estadístico ya hecho. Lo "AI" lo sumamos en la capa de generación, que es lo que diferencia el add-on.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
 <!-- ===================== ADD-ONS MARKETPLACE ===================== -->
 <section class="page" id="page-marketplace">
   <div class="max-w-[1480px] mx-auto px-6 lg:px-10 py-12">
@@ -2649,7 +3005,7 @@ const ADDONS = [
   { id:'custom_domain',    cat:'Branding',  name:'Custom domain',           usd:9,  trial:14, desc:'tienda.tumarca.com en vez de tumarca.fitsupply.cloud · SSL automático', icon:'🌐' },
   { id:'white_label',      cat:'Branding',  name:'White-label',             usd:29, trial:14, desc:'Remueve "powered by FitSupply" de emails, portal del cliente y facturas', icon:'🏷️' },
   { id:'custom_emails',    cat:'Branding',  name:'Editor de emails',        usd:12, trial:14, desc:'Editor visual para personalizar templates transaccionales', icon:'✉️' },
-  { id:'ab_testing',       cat:'Marketing', name:'A/B testing en planes',   usd:19, trial:14, desc:'Testeá pricing y bundles con tráfico real, ganador automático', icon:'🧪' },
+  { id:'ai_ab_testing',    cat:'Marketing', name:'AI A/B Testing',          usd:39, trial:14, desc:'Describí en español qué probar · Claude genera 2 variantes · PostHog gestiona el split · ganador con 1 click', icon:'🧪' },
   { id:'referrals',        cat:'Marketing', name:'Programa de referidos',   usd:15, trial:14, desc:'Códigos de referido, comisiones automáticas, dashboard', icon:'🤝' },
   { id:'email_flows',      cat:'Marketing', name:'Email flows avanzados',   usd:25, trial:14, desc:'Flows automatizados: bienvenida, recuperación de churn, upsell', icon:'📧' },
   { id:'whatsapp_bot',     cat:'Soporte',   name:'WhatsApp automatizado',   usd:29, trial:14, desc:'Bot pre-armado: pausar, cambiar dosis, tracking por chat', icon:'💬' },
@@ -2848,6 +3204,40 @@ function nav(name) {
   if (name === 'platform') renderPlatform();
   if (name === 'onboarding') renderOnboarding();
   if (name === 'marketplace') renderMarketplace();
+  if (name === 'experiments') renderExperiments();
+}
+
+/* =================== EXPERIMENTS (AI A/B Testing) =================== */
+function renderExperiments() {
+  closeExperimentWizard(); // close wizard on entry
+}
+
+function openExperimentWizard() {
+  document.getElementById('exp-wizard').classList.remove('hidden');
+  ewBack(1);
+  document.getElementById('exp-wizard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeExperimentWizard() {
+  document.getElementById('exp-wizard').classList.add('hidden');
+}
+
+function ewBack(n) {
+  document.querySelectorAll('.ew-step').forEach(s => s.classList.add('hidden'));
+  document.getElementById('ew-' + n).classList.remove('hidden');
+  document.getElementById('ew-step').textContent = n;
+  const titles = { 1:'Describí qué querés probar', 2:'Claude generó 2 variantes', 3:'Confirmá y publicá' };
+  document.getElementById('ew-title').textContent = titles[n];
+}
+
+function ewGenerate() {
+  toast('✨ Llamando a Claude API… (~3s)');
+  setTimeout(() => { ewBack(2); toast('✓ 2 variantes generadas'); }, 1500);
+}
+
+function ewPublish() {
+  toast('🚀 Experimento publicado · PostHog flag activo · empezando a medir');
+  setTimeout(() => closeExperimentWizard(), 1500);
 }
 
 /* =================== ADD-ONS MARKETPLACE =================== */
